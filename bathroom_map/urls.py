@@ -20,7 +20,6 @@ from django.urls import path
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.views.generic import TemplateView
-from djgeojson.views import GeoJSONLayerView
 
 from .models import Bathroom
 from .views import MarkersMapView

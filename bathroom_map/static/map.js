@@ -8,7 +8,6 @@ const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">Op
 const map = L.map('map')
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: attribution }).addTo(map);
 const markers = JSON.parse(document.getElementById('markers-data').textContent);
-console.log(markers);
 let markerGroup = L.featureGroup([]).addTo(map);
 
 for (var key in markers) {

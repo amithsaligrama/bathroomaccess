@@ -12,5 +12,4 @@ class MarkersMapView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["markers"] = json.loads(serialize("json", Bathroom.objects.all()))
-        print(context)
         return context
