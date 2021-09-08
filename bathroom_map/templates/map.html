@@ -12,5 +12,27 @@
   {{ markers|json_script:"markers-data" }}
   <div id="map"></div>
   <script src="{% static 'map.js' %}"></script>
+
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Address</th>
+      <th>Zip Code</th>
+      <th>Hours</th>
+      <th>Remarks</th>
+    </tr>
+    <tbody>
+      {% for pl in markers %}
+      <tr>
+        <td>{{pl.fields.name}}</td>
+        <td><a href="https://www.google.com/maps/search/?api=1&query={{pl.fields.latitude}},{{pl.fields.longitude}}" target="_blank">{{pl.fields.address}}</a></td>
+        <td>{{pl.fields.zip}}</td>
+        <td>{{pl.fields.hours}}</td>
+        <td>{{pl.fields.remarks}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
 </body>
 </html>
