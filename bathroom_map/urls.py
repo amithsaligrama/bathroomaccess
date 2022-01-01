@@ -22,10 +22,10 @@ from django.contrib import admin
 from django.views.generic import TemplateView
 
 from .models import Bathroom
-from .views import MarkersMapView
+from .views import bathrooms_view
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^$', TemplateView.as_view(template_name='map.html'), name='home'),
-    path('map/', MarkersMapView.as_view()),
+    url(r'^$', bathrooms_view, name='home'),
+    path('map/', bathrooms_view, name='map'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
