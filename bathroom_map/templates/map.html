@@ -17,7 +17,7 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div> 
   {{ markers|json_script:"markers-data" }}
-  <div id="map"></div>
+  <div id="map" style="height: 70%;"></div>
   <script>
     function render(m) {
       var ret = "<h3>" + m.name + "</h3><br><b>Address</b>: <a target=\"_blank\" href=\"https://www.google.com/maps/search/?api=1&query=" + m.latitude + "%2C" + m.longitude + "\">" + m.address + "</a><br><b>Hours</b>: " + m.hours + "<br><b>Remarks</b>: " + m.remarks.replace(/(?:\r\n|\r|\n)/g, '<br>');;
@@ -47,7 +47,7 @@
     <tr>
       <th>Name</th>
       <th>Address</th>
-      <th>Zip Code</th>
+      <th>Zip&nbspCode</th>
       <th>Hours</th>
       <th>Remarks</th>
     </tr>
