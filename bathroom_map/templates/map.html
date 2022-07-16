@@ -32,7 +32,22 @@
 
     for (var key in markers) {
       var latlng = L.latLng(markers[key].fields.latitude, markers[key].fields.longitude);
-      L.marker(latlng).bindPopup(render(markers[key].fields)).addTo(markerGroup);
+      console.log(markers[key].fields.remarks);
+      var markerColor = 'marker-icon-2x-blue.png';
+      var searchableRemarks = markers[key].fields.remarks.toLowerCase();
+      if (searchableRemarks.includes('portapotty'))
+        markerColor = 'marker-icon-2x-yellow.png';
+      else if (searchableRemarks.includes('inaccessible') || searchableRemarks.includes('fare control'))
+        markerColor = 'marker-icon-2x-red.png';
+      var icon = L.icon({
+        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/" + markerColor,
+        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+      L.marker(latlng, {icon: icon}).bindPopup(render(markers[key].fields)).addTo(markerGroup);
     }
 
     {% if latitude %}
