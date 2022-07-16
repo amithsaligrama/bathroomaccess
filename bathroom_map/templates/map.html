@@ -2,7 +2,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <title>Markers Map</title>
+  <title>Bathroom Access</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="{% static 'map.css' %}">
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
@@ -21,7 +21,6 @@
   <script>
     function render(m) {
       var ret = "<h3>" + m.name + "</h3><br><b>Address</b>: <a target=\"_blank\" href=\"https://www.google.com/maps/search/?api=1&query=" + m.latitude + "%2C" + m.longitude + "\">" + m.address + "</a><br><b>Hours</b>: " + m.hours + "<br><b>Remarks</b>: " + m.remarks.replace(/(?:\r\n|\r|\n)/g, '<br>');;
-      console.log(ret);
       return ret;
     }
 
@@ -43,26 +42,23 @@
     {% endif %}
   </script>
 
-  <table>
+  <div class="container-fluid">
+  <table style="table-layout: auto; width: 100%;">
     <tr>
-      <th>Name</th>
-      <th>Address</th>
-      <th>Zip&nbspCode</th>
+      <th>Name and address</th>
       <th>Hours</th>
       <th>Remarks</th>
     </tr>
     <tbody>
       {% for pl in markers %}
       <tr>
-        <td>{{pl.fields.name}}</td>
-        <td><a href="https://www.google.com/maps/search/?api=1&query={{pl.fields.latitude}},{{pl.fields.longitude}}" target="_blank">{{pl.fields.address}}</a></td>
-        <td>{{pl.fields.zip}}</td>
-        <td>{{pl.fields.hours}}</td>
-        <td>{{pl.fields.remarks}}</td>
+        <td>{{pl.fields.name}}<br><br><a href="https://www.google.com/maps/search/?api=1&query={{pl.fields.latitude}},{{pl.fields.longitude}}" target="_blank">{{pl.fields.address}} {{pl.fields.zip}}</a></td>
+        <td style="white-space: pre-line">{{pl.fields.hours}}</td>
+        <td style="white-space: pre-line">{{pl.fields.remarks}}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-
+  </div>
 </body>
 </html>
