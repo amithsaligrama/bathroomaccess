@@ -10,53 +10,59 @@
   <!-- JavaScript Bundle with Popper -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+  <script>
+    window.onload = function() {
+      function render(m) {
+        var ret = "<h3>" + m.name + "</h3><br><b>Address</b>: <a target=\"_blank\" href=\"https://www.google.com/maps/search/?api=1&query=" + m.latitude + "%2C" + m.longitude + "\">" + m.address + "</a><br><b>Hours</b>: " + m.hours + "<br><b>Remarks</b>: " + m.remarks.replace(/(?:\r\n|\r|\n)/g, '<br>');;
+        return ret;
+      }
+
+      const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      const map = L.map('map')
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: attribution }).addTo(map);
+      const markers = JSON.parse(document.getElementById('markers-data').textContent);
+      let markerGroup = L.featureGroup([]).addTo(map);
+
+      for (var key in markers) {
+        var latlng = L.latLng(markers[key].fields.latitude, markers[key].fields.longitude);
+        var markerColor = 'marker-icon-2x-blue.png';
+        var searchableRemarks = markers[key].fields.remarks.toLowerCase();
+        if (searchableRemarks.includes('portapotty'))
+          markerColor = 'marker-icon-2x-yellow.png';
+        else if (searchableRemarks.includes('inaccessible') || searchableRemarks.includes('fare control'))
+          markerColor = 'marker-icon-2x-red.png';
+        var icon = L.icon({
+          iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/" + markerColor,
+          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        });
+        L.marker(latlng, {icon: icon}).bindPopup(render(markers[key].fields)).addTo(markerGroup);
+      }
+
+      {% if latitude %}
+      map.setView(new L.LatLng({{ latitude }}, {{ longitude }}), 15);
+      {% else %}
+      map.fitBounds(markerGroup.getBounds(), { maxZoom: 15, padding: [100, 100] });
+      {% endif %}
+
+      var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      if (isSafari) {
+        document.getElementById("safari-alert").style.display = "block";
+      }
+    }
+  </script>
 </head>
 <body>
-  <div class="alert alert-warning alert-dismissible fade show" role="alert">
-    This site may not work correctly in Safari due to a bug in the Leaflet JS library it uses. The developer is aware of the problem and is working on a fix.
+  <div class="alert alert-warning alert-dismissible fade show" id="safari-alert" role="alert" style="display: none;">
+    This site may not work correctly in desktop Safari, as well as in all iOS/iPadOS browsers, due to a bug in the Leaflet JS library it uses. The developer is aware of the problem and is working on a fix.
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
   </div> 
   {{ markers|json_script:"markers-data" }}
   <div id="map" style="height: 70%;"></div>
-  <script>
-    function render(m) {
-      var ret = "<h3>" + m.name + "</h3><br><b>Address</b>: <a target=\"_blank\" href=\"https://www.google.com/maps/search/?api=1&query=" + m.latitude + "%2C" + m.longitude + "\">" + m.address + "</a><br><b>Hours</b>: " + m.hours + "<br><b>Remarks</b>: " + m.remarks.replace(/(?:\r\n|\r|\n)/g, '<br>');;
-      return ret;
-    }
-
-    const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    const map = L.map('map')
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: attribution }).addTo(map);
-    const markers = JSON.parse(document.getElementById('markers-data').textContent);
-    let markerGroup = L.featureGroup([]).addTo(map);
-
-    for (var key in markers) {
-      var latlng = L.latLng(markers[key].fields.latitude, markers[key].fields.longitude);
-      console.log(markers[key].fields.remarks);
-      var markerColor = 'marker-icon-2x-blue.png';
-      var searchableRemarks = markers[key].fields.remarks.toLowerCase();
-      if (searchableRemarks.includes('portapotty'))
-        markerColor = 'marker-icon-2x-yellow.png';
-      else if (searchableRemarks.includes('inaccessible') || searchableRemarks.includes('fare control'))
-        markerColor = 'marker-icon-2x-red.png';
-      var icon = L.icon({
-        iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/" + markerColor,
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-      });
-      L.marker(latlng, {icon: icon}).bindPopup(render(markers[key].fields)).addTo(markerGroup);
-    }
-
-    {% if latitude %}
-    map.setView(new L.LatLng({{ latitude }}, {{ longitude }}), 15);
-    {% else %}
-    map.fitBounds(markerGroup.getBounds(), { maxZoom: 15, padding: [100, 100] });
-    {% endif %}
-  </script>
-
   <div class="container-fluid">
     <div class="row">
       <div class="col">
