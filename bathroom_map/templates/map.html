@@ -58,22 +58,54 @@
   </script>
 
   <div class="container-fluid">
-  <table style="table-layout: auto; width: 100%;">
-    <tr>
-      <th>Name and address</th>
-      <th>Hours</th>
-      <th>Remarks</th>
-    </tr>
-    <tbody>
-      {% for pl in markers %}
-      <tr>
-        <td>{{pl.fields.name}}<br><br><a href="https://www.google.com/maps/search/?api=1&query={{pl.fields.latitude}},{{pl.fields.longitude}}" target="_blank">{{pl.fields.address}} {{pl.fields.zip}}</a></td>
-        <td style="white-space: pre-line">{{pl.fields.hours}}</td>
-        <td style="white-space: pre-line">{{pl.fields.remarks}}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <div class="row">
+      <div class="col">
+        <nav>
+          <div class="nav nav-tabs" id="nav-tab" role="tablist">
+            <button class="nav-link active" id="nav-brlist-tab" data-bs-toggle="tab" data-bs-target="#nav-brlist" type="button" role="tab" aria-controls="nav-brlist" aria-selected="true">List</button>
+            <button class="nav-link" id="nav-about-tab" data-bs-toggle="tab" data-bs-target="#nav-about" type="button" role="tab" aria-controls="nav-about" aria-selected="false">About</button>
+          </div>
+        </nav>
+        <div class="tab-content" id="nav-tabContent">
+          <div class="tab-pane fade show active" id="nav-brlist" role="tabpanel" aria-labelledby="nav-brlist-tab" tabindex="0">
+            <table style="table-layout: auto; width: 100%;">
+              <tr>
+                <th>Name and address</th>
+                <th>Hours</th>
+                <th>Remarks</th>
+              </tr>
+              <tbody>
+                {% for pl in markers %}
+                <tr>
+                  <td>{{pl.fields.name}}<br><br><a href="https://www.google.com/maps/search/?api=1&query={{pl.fields.latitude}},{{pl.fields.longitude}}" target="_blank">{{pl.fields.address}} {{pl.fields.zip}}</a></td>
+                  <td style="white-space: pre-line">{{pl.fields.hours}}</td>
+                  <td style="white-space: pre-line">{{pl.fields.remarks}}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="tab-pane fade" id="nav-about" role="tabpanel" aria-labelledby="nav-about-tab" tabindex="0">
+            <br>
+            <p>
+              My name is Amith Saligrama. I am a high school student at the Commonwealth School in Boston passionately interested in improving our local communities. My interest in developing this map began in 2020, when my grandparents began to limit their daily walks due to a lack of restroom access. I realized that there are many people like my grandparents - parents with toddlers, taxi and delivery drivers - who need access to restrooms. A situation that has become more challenging since COVID-19 as private businesses have become reluctant to allow non-customers into their facilities.
+            </p>
+
+            <p>
+              This motivated me to create bathroomaccess.com to map and list public (not private) toilets in the Greater Boston area. I found most city websites include a list of parks, trails, and even water-filling stations, but not restrooms. However, if there are no mentions of restrooms, how inclusive are we being? Over time, my goal has become equally balanced between helping people find restrooms and advocating for our local communities to acknowledge all biological needs and be welcoming to all who use our public space.
+            </p>
+            
+            <p>
+              My work is now live on the <a href="https://www.somervillema.gov/departments/ospcd/transportation-and-infrastructure/getting-around-somerville">City of Somerville website</a> and the Weston GIS maps, and I recently won the Rotary Club of Weston and Wayland's Youth Leadership Award for my project. I am continuing my advocacy with other cities in the Greater Boston area to include this resource on their website.
+            </p>
+
+            <p>
+              Please email me at <a href="mailto:publicbathroomaccess@gmail.com">publicbathroomaccess@gmail.com</a> if you have any general suggestions or specific public bathroom locations you may want me to add.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </body>
 </html>
