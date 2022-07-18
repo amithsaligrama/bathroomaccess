@@ -25,9 +25,9 @@
       let markerGroup = L.featureGroup([]).addTo(map);
 
       for (var key in markers) {
-        var latlng = L.latLng(markers[key].fields.latitude, markers[key].fields.longitude);
+        var latlng = L.latLng(markers[key].latitude, markers[key].longitude);
         var markerColor = 'marker-icon-2x-green.png';
-        var searchableRemarks = markers[key].fields.remarks.toLowerCase();
+        var searchableRemarks = markers[key].remarks.toLowerCase();
         if (searchableRemarks.includes('portapotty'))
           markerColor = 'marker-icon-2x-yellow.png';
         else if (searchableRemarks.includes('inaccessible') || searchableRemarks.includes('fare control'))
@@ -40,7 +40,7 @@
           popupAnchor: [1, -34],
           shadowSize: [41, 41]
         });
-        L.marker(latlng, {icon: icon}).bindPopup(render(markers[key].fields)).addTo(markerGroup);
+        L.marker(latlng, {icon: icon}).bindPopup(render(markers[key])).addTo(markerGroup);
       }
 
       function renderWithoutLocation() {
@@ -52,7 +52,8 @@
       {% else %}
       navigator.geolocation.getCurrentPosition(
         function(loc) {
-          var userLatLng = new L.LatLng(loc.coords.latitude, loc.coords.longitude)
+          console.log(loc.coords.latitude, loc.coords.longitude)
+          var userLatLng = new L.LatLng(loc.coords.latitude, loc.coords.longitude);
           map.setView(userLatLng, 15);
           var markersInView = false;
           for (var key in markers) {
@@ -66,6 +67,13 @@
           }
 
           L.circleMarker(userLatLng, 400).addTo(map);
+
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", "/api_ordered?latitude=" + loc.coords.latitude + "&longitude=" + loc.coords.longitude);
+          xhr.onload = function() {
+            document.getElementById("br-cards-row").innerHTML = this.responseText;
+          };
+          xhr.send();
         },
         function (error) {
           renderWithoutLocation();
@@ -105,7 +113,7 @@
         <div class="tab-content" id="nav-tabContent">
           <div class="tab-pane fade show active" id="nav-brlist" role="tabpanel" aria-labelledby="nav-brlist-tab" tabindex="0">
             <br>
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" id="br-cards-row">
               {% include "list.html" %}
             </div>
           </div>

@@ -22,10 +22,11 @@ from django.contrib import admin
 from django.views.generic import TemplateView
 
 from .models import Bathroom
-from .views import bathrooms_view
+from .views import bathrooms_view, bathrooms_order_by_distance_view
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', bathrooms_view, name='home'),
     path('map/', bathrooms_view, name='map'),
+    path('api_ordered', bathrooms_order_by_distance_view, name='api'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
