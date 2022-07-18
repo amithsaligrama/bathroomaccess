@@ -26,7 +26,7 @@
 
       for (var key in markers) {
         var latlng = L.latLng(markers[key].fields.latitude, markers[key].fields.longitude);
-        var markerColor = 'marker-icon-2x-blue.png';
+        var markerColor = 'marker-icon-2x-green.png';
         var searchableRemarks = markers[key].fields.remarks.toLowerCase();
         if (searchableRemarks.includes('portapotty'))
           markerColor = 'marker-icon-2x-yellow.png';
@@ -43,16 +43,58 @@
         L.marker(latlng, {icon: icon}).bindPopup(render(markers[key].fields)).addTo(markerGroup);
       }
 
-      {% if latitude %}
-      map.setView(new L.LatLng({{ latitude }}, {{ longitude }}), 15);
-      {% else %}
-      map.fitBounds(markerGroup.getBounds(), { maxZoom: 15, padding: [100, 100] });
-      {% endif %}
+      function renderWithoutLocation() {
+        {% if latitude %}
+          map.setView(new L.LatLng({{ latitude }}, {{ longitude }}), 15);
+        {% else %}
+          map.fitBounds(markerGroup.getBounds(), { maxZoom: 15, padding: [100, 100] });
+        {% endif %}
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function(loc) {
+          var userLatLng = new L.LatLng(loc.coords.latitude, loc.coords.longitude)
+          map.setView(userLatLng, 15);
+          var markersInView = false;
+          for (var key in markers) {
+            if (map.getBounds().contains(latlng)) {
+              markersInView = true;
+            }
+          }
+
+          if (!markersInView) {
+            renderWithoutLocation();
+          }
+
+          console.log(loc.coords.accuracy);
+          L.circleMarker(userLatLng, 400).addTo(map);
+        },
+        function (error) {
+          renderWithoutLocation();
+        },
+        {
+          enableHighAccuracy: false,
+          maximumAge: Infinity,
+          timeout: 5000
+        }
+      );
+
+      function checkFeaturesInView() {
+        map.eachLayer(function(layer) {
+          if(layer instanceof L.Marker) {
+            if(map.getBounds().contains(layer.getLatLng())) {
+              return true;
+            }
+          }
+        });
+        return false;
+      }
 
       var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
       if (isSafari) {
         document.getElementById("safari-alert").style.display = "block";
       }
+
     }
   </script>
 </head>
