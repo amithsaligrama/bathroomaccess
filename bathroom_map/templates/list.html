@@ -1,0 +1,14 @@
+{% for pl in markers %}
+<div class="col">
+  <div class="card">
+    <div class="card-header">{{pl.fields.name}}</div>
+    <div class="card-body">
+      <p class="card-text"><a href="https://www.google.com/maps/search/?api=1&query={{pl.fields.latitude}},{{pl.fields.longitude}}" target="_blank">{{pl.fields.address}} {{pl.fields.zip}}</a></p>
+      <p class="card-text" style="white-space: pre-line"><b>Hours:</b> {{pl.fields.hours}}</p>
+      {% if pl.fields.remarks %}
+        <p class="card-text" style="white-space: pre-line"><b>Remarks:</b> {{pl.fields.remarks}}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endfor %}
