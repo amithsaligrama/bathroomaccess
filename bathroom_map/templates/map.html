@@ -11,6 +11,22 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
+  <style>
+    .legend {
+      line-height: 18px;
+      color: #000000;
+      background-color: #ffffffcc;
+      padding: 1em;
+    }
+    .legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.7;
+    }
+  </style>
+
   <script>
     window.onload = function() {
       function render(m) {
@@ -91,6 +107,18 @@
         document.getElementById("safari-alert").style.display = "block";
       }
 
+      var legend = L.control({position: 'bottomright'});
+      legend.onAdd = function(map) {
+        var div = L.DomUtil.create('div', 'info legend');
+        div.innerHTML += '<br>'
+        div.innerHTML += '<p><i style="background: #2AAD27"></i> Full, accessible restroom</p>';
+        div.innerHTML += '<p><i style="background: #FFD326"></i> Portapotty</p>';
+        div.innerHTML += '<p><i style="background: #CB2B3E"></i> Can be inaccessible or entry restricted</p>';
+
+        return div;
+      }
+      
+      legend.addTo(map);
     }
   </script>
 </head>
