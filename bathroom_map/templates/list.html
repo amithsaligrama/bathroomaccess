@@ -5,7 +5,7 @@
     <div class="card-body">
       <p class="card-text"><a href="https://www.google.com/maps/search/?api=1&query={{pl.latitude}},{{pl.longitude}}" target="_blank">{{pl.address}} {{pl.zip}}</a></p>
       {% if pl.dist %}
-        <p class="card-text" style="white-space: pre-line">About {{pl.dist|floatformat:1}} miles away</p>
+        <p class="card-text" style="white-space: pre-line">About {{pl.dist|floatformat:1}} miles away from specified location</p>
       {% endif %}
       <p class="card-text" style="white-space: pre-line"><b>Hours:</b> {{pl.hours}}</p>
       {% if pl.remarks %}

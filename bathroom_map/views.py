@@ -19,6 +19,7 @@ def bathrooms_view(request):
     
     ret_ordered = []
     for marker in Bathroom.objects.all():
+        dist = distance((latitude, longitude), (marker.latitude, marker.longitude))
         marker_dict = {
             'name': marker.name,
             'address': marker.address,
@@ -26,7 +27,8 @@ def bathrooms_view(request):
             'latitude': float(marker.latitude),
             'longitude': float(marker.longitude),
             'hours': marker.hours,
-            'remarks': marker.remarks
+            'remarks': marker.remarks,
+            'dist': dist.miles
         }
         ret_ordered.append(marker_dict)
 

@@ -65,6 +65,12 @@
 
       {% if latitude %}
           map.setView(new L.LatLng({{ latitude }}, {{ longitude }}), 15);
+          var xhr = new XMLHttpRequest();
+          xhr.open("GET", "/api_ordered?latitude=" + {{ latitude }} + "&longitude=" + {{ longitude }});
+          xhr.onload = function() {
+            document.getElementById("br-cards-row").innerHTML = this.responseText;
+          };
+          xhr.send();
       {% else %}
       navigator.geolocation.getCurrentPosition(
         function(loc) {
