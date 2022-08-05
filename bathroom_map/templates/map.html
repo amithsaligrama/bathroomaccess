@@ -147,6 +147,30 @@
         <div class="tab-content" id="nav-tabContent">
           <div class="tab-pane fade show active" id="nav-brlist" role="tabpanel" aria-labelledby="nav-brlist-tab" tabindex="0">
             <br>
+            <div class="row" id="town-dropdown">
+              <div class="col text-center">
+                <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    View bathrooms for town...
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/map?city=braintree-massachusetts">Braintree, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=brighton-massachusetts">Brighton, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=boston-massachusetts">Boston, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=cambridge-massachusetts">Cambridge, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=charlestown-massachusetts">Charlestown, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=dorchester-massachusetts">Dorchester, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=quincy-massachusetts">Quincy, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=waltham-massachusetts">Waltham, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=wayland-massachusetts">Wayland, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=wellesley-massachusetts">Wellesley, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=weston-massachusetts">Weston, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=somerville-massachusetts">Somerville, MA</a></li>
+                  </ul>
+                </div>              
+              </div>
+            </div>
+            <br>
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" id="br-cards-row">
               {% include "list.html" %}
             </div>
