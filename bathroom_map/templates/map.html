@@ -44,7 +44,7 @@
         var latlng = L.latLng(markers[key].latitude, markers[key].longitude);
         var markerColor = 'marker-icon-2x-green.png';
         var searchableRemarks = markers[key].remarks.toLowerCase();
-        if (searchableRemarks.includes('portapotty'))
+        if (searchableRemarks.includes('portapotty') || searchableRemarks.includes('seasonal'))
           markerColor = 'marker-icon-2x-yellow.png';
         else if (searchableRemarks.includes('inaccessible') || searchableRemarks.includes('fare control'))
           markerColor = 'marker-icon-2x-red.png';
