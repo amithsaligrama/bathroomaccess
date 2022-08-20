@@ -2,7 +2,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <title>Bathroom Access</title>
+  <title>Bathroom Access: Find public restrooms near you in Greater Boston</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="{% static 'map.css' %}">
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
@@ -44,7 +44,7 @@
         var latlng = L.latLng(markers[key].latitude, markers[key].longitude);
         var markerColor = 'marker-icon-2x-green.png';
         var searchableRemarks = markers[key].remarks.toLowerCase();
-        if (searchableRemarks.includes('portapotty'))
+        if (searchableRemarks.includes('portapotty') || searchableRemarks.includes('seasonal'))
           markerColor = 'marker-icon-2x-yellow.png';
         else if (searchableRemarks.includes('inaccessible') || searchableRemarks.includes('fare control'))
           markerColor = 'marker-icon-2x-red.png';
@@ -117,9 +117,9 @@
       legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend');
         div.innerHTML += '<br>'
-        div.innerHTML += '<p><i style="background: #2AAD27"></i> Full, accessible restroom</p>';
-        div.innerHTML += '<p><i style="background: #FFD326"></i> Portapotty</p>';
-        div.innerHTML += '<p><i style="background: #CB2B3E"></i> Can be inaccessible or entry restricted</p>';
+        div.innerHTML += '<p><i style="background: #2AAD27"></i> Free, year-long bathrooms</p>';
+        div.innerHTML += '<p><i style="background: #FFD326"></i> Seasonal bathrooms (e.g. portapotties)</p>';
+        div.innerHTML += '<p><i style="background: #CB2B3E"></i> Fare-controlled or partially inaccessible bathrooms</p>';
 
         return div;
       }
@@ -155,15 +155,26 @@
                   </button>
                   <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="/map?city=braintree-massachusetts">Braintree, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=brookline-massachusetts">Brookline, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=brighton-massachusetts">Brighton, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=boston-massachusetts">Boston, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=cambridge-massachusetts">Cambridge, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=charlestown-massachusetts">Charlestown, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=chestnut%20hill-massachusetts">Chestnut Hill, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=dorchester-massachusetts">Dorchester, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=fall%20river-massachusetts">Fall River, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=gloucester-massachusetts">Gloucester, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=hyde%20park-massachusetts">Hyde Park, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=malden-massachusetts">Malden, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=mattapan-massachusetts">Mattapan, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=medford-massachusetts">Medford, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=quincy-massachusetts">Quincy, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=roslindale-massachusetts">Roslindale, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=roxbury-massachusetts">Roxbury, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=waltham-massachusetts">Waltham, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=wayland-massachusetts">Wayland, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=wellesley-massachusetts">Wellesley, MA</a></li>
+                    <li><a class="dropdown-item" href="/map?city=west%20roxbury-massachusetts">West Roxbury, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=weston-massachusetts">Weston, MA</a></li>
                     <li><a class="dropdown-item" href="/map?city=somerville-massachusetts">Somerville, MA</a></li>
                   </ul>
