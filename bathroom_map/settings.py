@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     'leaflet',
     'djgeojson',
+    'rest_framework',
     'bathroom_map'
 ]
 
@@ -131,4 +132,10 @@ LEAFLET_CONFIG = {
 
 SERIALIZATION_MODULES = {
     "geojson": "django.contrib.gis.serializers.geojson", 
- }
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    ]
+}

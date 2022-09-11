@@ -15,18 +15,31 @@ Including another URLconf
 """
 
 from django.conf import settings
-from django.conf.urls import url
-from django.urls import path
+from django.urls import path, include
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.views.generic import TemplateView
+from rest_framework import routers, serializers, viewsets
 
 from .models import Bathroom
 from .views import bathrooms_view, bathrooms_order_by_distance_view
 
+class BathroomSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Bathroom
+        fields = ['name', 'address', 'zip', 'latitude', 'longitude', 'hours', 'remarks']
+
+class BathroomViewSet(viewsets.ModelViewSet):
+    queryset = Bathroom.objects.all()
+    serializer_class = BathroomSerializer
+
+router = routers.DefaultRouter()
+router.register(r'bathrooms', BathroomViewSet)
+
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
-    url(r'^$', bathrooms_view, name='home'),
+    path('api/', include(router.urls)),
+    path('admin/', admin.site.urls),
+    path('', bathrooms_view, name='home'),
     path('map/', bathrooms_view, name='map'),
     path('api_ordered', bathrooms_order_by_distance_view, name='api'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
