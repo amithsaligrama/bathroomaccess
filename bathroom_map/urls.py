@@ -43,4 +43,5 @@ urlpatterns = [
     path('', include('pwa.urls')),
     path('map/', bathrooms_view, name='map'),
     path('api_ordered', bathrooms_order_by_distance_view, name='api'),
+    path('.well-known/assetlinks.json', TemplateView.as_view(template_name='assetlinks.json', content_type='application/json')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
