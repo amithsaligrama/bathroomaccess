@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'leaflet',
     'djgeojson',
     'rest_framework',
-    'bathroom_map'
+    'bathroom_map',
+    'pwa'
 ]
 
 MIDDLEWARE = [
@@ -155,3 +156,33 @@ LOGGING = {
         },
     },
 }
+
+PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, "bathroom_map", "static", "serviceworker.js")
+PWA_APP_NAME = 'Bathroom Access'
+PWA_APP_DESCRIPTION = "Bathroom Access: Find public restrooms near you"
+PWA_APP_THEME_COLOR = '#000000'
+PWA_APP_BACKGROUND_COLOR = '#ffffff'
+PWA_APP_DISPLAY = 'standalone'
+PWA_APP_SCOPE = '/'
+PWA_APP_ORIENTATION = 'any'
+PWA_APP_START_URL = '/'
+PWA_APP_STATUS_BAR_COLOR = 'default'
+PWA_APP_ICONS = [
+    {
+        'src': 'https://raw.githubusercontent.com/saligrama/saligrama.github.io/master/img/ico/android-chrome-192x192.png',
+        'sizes': '192x192'
+    }
+]
+PWA_APP_ICONS_APPLE = [
+    {
+        'src': 'https://raw.githubusercontent.com/saligrama/saligrama.github.io/master/img/ico/android-chrome-192x192.png',
+        'sizes': '192x192'
+    }
+]
+PWA_APP_SPLASH_SCREEN = [
+    {
+        'src': '/images/icon.png',
+        'media': '(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)'
+    }
+]
+PWA_APP_DIR = 'ltr'

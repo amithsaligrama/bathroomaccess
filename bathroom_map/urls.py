@@ -40,6 +40,7 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('admin/', admin.site.urls),
     path('', bathrooms_view, name='home'),
+    path('', include('pwa.urls')),
     path('map/', bathrooms_view, name='map'),
     path('api_ordered', bathrooms_order_by_distance_view, name='api'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
