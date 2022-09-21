@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "xyz.appmaker.orckab",
+      "sha256_cert_fingerprints": ["3A:F9:C0:C5:E3:21:1D:7D:43:5C:D4:77:DD:BA:C9:65:04:F2:C8:59:A5:88:3B:39:6B:4F:49:07:B0:01:C2:33"]
+    }
+  }
+]
