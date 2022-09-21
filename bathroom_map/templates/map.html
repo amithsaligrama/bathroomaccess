@@ -120,11 +120,6 @@
       );
       {% endif %}
 
-      var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      if (isSafari) {
-        document.getElementById("safari-alert").style.display = "block";
-      }
-
       var legend = L.control({position: 'bottomright'});
       legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend');
@@ -141,10 +136,6 @@
   </script>
 </head>
 <body>
-  <div class="alert alert-warning alert-dismissible fade show" id="safari-alert" role="alert" style="display: none;">
-    This site may not work correctly in desktop Safari, as well as in all iOS/iPadOS browsers, due to a bug in the Leaflet JS library it uses. The developer is aware of the problem and is working on a fix.
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div> 
   {{ markers|json_script:"markers-data" }}
   <div id="map" style="height: 70%;"></div>
   <div class="container-fluid">
