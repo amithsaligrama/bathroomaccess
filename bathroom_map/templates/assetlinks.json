@@ -3,8 +3,8 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "xyz.appmaker.vrypzc",
-      "sha256_cert_fingerprints": ["0D:35:D6:1B:0C:93:19:3F:22:4A:BD:EC:7D:4E:29:5B:0C:E5:14:EB:C8:33:75:D5:1D:00:7D:D3:12:5B:FF:94"]
+      "package_name": "com.bathroomaccess.android",
+      "sha256_cert_fingerprints": ["58:72:65:E8:BC:19:00:A6:FB:AE:DD:84:EA:FE:8B:94:5D:9B:7A:8A:2F:B6:66:8A:F6:9B:3C:C7:57:AD:3C:5F"]
     }
   }
 ]
