@@ -56,9 +56,10 @@
         var latlng = L.latLng(markers[key].latitude, markers[key].longitude);
         var markerColor = 'marker-icon-2x-green.png';
         var searchableRemarks = markers[key].remarks.toLowerCase();
+        var searchableName = markers[key].name.toLowerCase();
         if (searchableRemarks.includes('portapotty') || searchableRemarks.includes('seasonal'))
           markerColor = 'marker-icon-2x-yellow.png';
-        else if (searchableRemarks.includes('inaccessible') || searchableRemarks.includes('fare control'))
+        else if (searchableRemarks.includes('inaccessible') || searchableRemarks.includes('fare control') || searchableName.includes('school'))
           markerColor = 'marker-icon-2x-red.png';
         var icon = L.icon({
           iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/" + markerColor,
