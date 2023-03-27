@@ -135,6 +135,16 @@
       legend.addTo(map);
     }
   </script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FBRC7LKLBW"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-FBRC7LKLBW');
+  </script>
 </head>
 <body>
   {{ markers|json_script:"markers-data" }}
