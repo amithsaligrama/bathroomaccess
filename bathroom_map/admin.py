@@ -7,7 +7,7 @@ class BathroomAdmin(admin.ModelAdmin):
     list_display = ("name", "address", "zip", "hours", "remarks")
     
     def save_model(self, request, obj, form, change):
-        geocoder = Nominatim(user_agent = 'bathroom_map')
+        geocoder = Nominatim(user_agent = 'bathroom_map_3')
         location = geocoder.geocode(obj.address + ", " + obj.zip)
         print(location.latitude)
         if not (obj.latitude and obj.longitude):

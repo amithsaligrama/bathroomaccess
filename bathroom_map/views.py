@@ -11,7 +11,7 @@ def bathrooms_view(request):
     if 'city' in request.GET:
         state_and_city = request.GET['city'].split('-')
         city, state = state_and_city[0], state_and_city[1]
-        geocoder = Nominatim(user_agent = 'bathroom_map')
+        geocoder = Nominatim(user_agent = 'bathroom_map_3')
         location = geocoder.geocode(city + ', ' + state)
         latitude, longitude = location.latitude, location.longitude
     else:
