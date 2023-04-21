@@ -61,8 +61,6 @@
           markerColor = 'marker-icon-2x-yellow.png';
         else if (searchableRemarks.includes('inaccessible') || searchableRemarks.includes('fare control') || searchableName.includes('school'))
           markerColor = 'marker-icon-2x-red.png';
-        else if (searchableRemarks.includes('marathon'))
-          markerColor = 'marker-icon-2x-blue.png';
         var icon = L.icon({
           iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/" + markerColor,
           shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
@@ -130,7 +128,6 @@
         div.innerHTML += '<p><i style="background: #2AAD27"></i> Free, year-long bathrooms</p>';
         div.innerHTML += '<p><i style="background: #FFD326"></i> Seasonal bathrooms (e.g. portapotties)</p>';
         div.innerHTML += '<p><i style="background: #CB2B3E"></i> Fare-controlled or partially inaccessible bathrooms</p>';
-        div.innerHTML += '<p><i style="background: #3184D0"></i> Temporary portapotties for the Boston Marathon</p>';
         return div;
       }
       
