@@ -1,0 +1,274 @@
+/* Bathroom Access – Custom Admin Theme */
+
+:root {
+  --primary: #0d9488;
+  --primary-dark: #0f766e;
+  --primary-light: #5eead4;
+  --accent: #0891b2;
+  --bg: #f8fafc;
+  --card-bg: #ffffff;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --success: #10b981;
+  --error: #ef4444;
+}
+
+/* Base */
+#header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+}
+
+#header a:link,
+#header a:visited {
+  color: #fff !important;
+}
+
+#branding h1 {
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
+}
+
+/* Main content area */
+#content {
+  background: var(--bg);
+  padding: 24px;
+  min-height: calc(100vh - 120px);
+}
+
+#content-main {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+  border: 1px solid var(--border);
+}
+
+/* Page title */
+#content h1 {
+  color: var(--text);
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Login page */
+.login #content {
+  padding: 2rem;
+}
+
+.login .form-row {
+  margin-bottom: 1rem;
+}
+
+.login input[type="text"],
+.login input[type="password"] {
+  width: 100%;
+  max-width: 320px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.login .submit-row {
+  padding: 1rem 0;
+}
+
+.login .submit-row input {
+  background: var(--primary);
+  color: #fff;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.login .submit-row input:hover {
+  background: var(--primary-dark);
+}
+
+/* Buttons */
+input[type="submit"],
+button[type="submit"],
+.button,
+a.button {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  transition: background 0.2s ease;
+}
+
+input[type="submit"]:hover,
+button[type="submit"]:hover,
+.button:hover,
+a.button:hover {
+  background: var(--primary-dark) !important;
+}
+
+.default {
+  background: var(--primary) !important;
+}
+
+/* Forms */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="url"],
+input[type="file"],
+textarea,
+select {
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+
+/* Tables */
+#result_list,
+.change-list .results {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+#result_list thead th {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  font-weight: 600;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+#result_list tbody tr:hover {
+  background: rgba(13, 148, 136, 0.04);
+}
+
+#result_list tbody td {
+  padding: 12px 16px;
+}
+
+/* Object tools (Import CSV, Import Shapefile) */
+.object-tools a.addlink {
+  background: var(--primary) !important;
+  color: #fff !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  font-weight: 500;
+}
+
+.object-tools a.addlink:hover {
+  background: var(--primary-dark) !important;
+}
+
+/* Messages */
+.messagelist li {
+  padding: 14px 20px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.messagelist li.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.messagelist li.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.messagelist li.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Breadcrumbs */
+.breadcrumbs {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.breadcrumbs a {
+  color: var(--primary);
+}
+
+/* Sidebar / module list */
+#content-main .module h2,
+#content-main .module caption {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  padding: 12px 16px;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+}
+
+#content-main .module {
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+/* Import pages (CSV / Shapefile) */
+h1 {
+  margin-bottom: 1rem;
+}
+
+.form-row {
+  margin-bottom: 1rem;
+}
+
+.form-row label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+.form-row input[type="file"] {
+  padding: 8px;
+}
+
+p {
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+}
+
+code {
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+ol {
+  color: var(--text-muted);
+  line-height: 1.8;
+}
+
+/* Delete confirmation */
+.delete-confirmation {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 20px;
+}

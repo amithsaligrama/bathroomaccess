@@ -1,0 +1,17 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  <li>
+    <a href="clean-bathrooms/">Clean bathrooms</a>
+  </li>
+  <li>
+    <a href="clean-bathrooms/?fetch_hours=1">Clean + fetch hours from map</a>
+  </li>
+  <li>
+    <a href="import-csv/" class="addlink">Import CSV</a>
+  </li>
+  <li>
+    <a href="import-shapefile/" class="addlink">Import Shapefile</a>
+  </li>
+  {{ block.super }}
+{% endblock %}

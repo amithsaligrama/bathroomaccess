@@ -7,11 +7,9 @@
   <title>Bathroom Access: Find public restrooms near you in Greater Boston</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-  <!-- JavaScript Bundle with Popper -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-  <script src="https://kit.fontawesome.com/66634f6c24.js" crossorigin="anonymous"></script>
 
   <style>
     html, body {
@@ -21,7 +19,11 @@
 
     #map {
       width: 100%;
-      height: 100%;
+      height: 70vh;
+      min-height: 400px;
+      position: relative;
+      z-index: 1;
+      background: #e5e3df;
     }
 
     .legend {
@@ -38,104 +40,7 @@
       opacity: 0.7;
     }
   </style>
-
-  <script>
-    window.onload = function() {
-      function render(m) {
-        var ret = "<h3>" + m.name + "</h3><br><b>Address</b>: <a target=\"_blank\" href=\"https://www.google.com/maps/search/?api=1&query=" + m.latitude + "%2C" + m.longitude + "\">" + m.address + "</a><br><b>Hours</b>: " + m.hours + "<br><b>Remarks</b>: " + m.remarks.replace(/(?:\r\n|\r|\n)/g, '<br>');;
-        return ret;
-      }
-
-      const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-      const map = L.map('map', {tap: false});
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: attribution }).addTo(map);
-      const markers = JSON.parse(document.getElementById('markers-data').textContent);
-      let markerGroup = L.featureGroup([]).addTo(map);
-
-      for (var key in markers) {
-        var latlng = L.latLng(markers[key].latitude, markers[key].longitude);
-        var markerColor = 'marker-icon-2x-green.png';
-        var searchableRemarks = markers[key].remarks.toLowerCase();
-        var searchableName = markers[key].name.toLowerCase();
-        if (searchableRemarks.includes('portapotty') || searchableRemarks.includes('seasonal'))
-          markerColor = 'marker-icon-2x-yellow.png';
-        else if (searchableRemarks.includes('inaccessible') || searchableRemarks.includes('fare control') || searchableName.includes('school'))
-          markerColor = 'marker-icon-2x-red.png';
-        var icon = L.icon({
-          iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/" + markerColor,
-          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41]
-        });
-        L.marker(latlng, {icon: icon}).bindPopup(render(markers[key])).addTo(markerGroup);
-      }
-
-      function renderWithoutLocation() {
-        map.fitBounds(markerGroup.getBounds(), { maxZoom: 15, padding: [100, 100] });
-      }
-
-      {% if latitude %}
-          map.setView(new L.LatLng({{ latitude }}, {{ longitude }}), 15);
-          var xhr = new XMLHttpRequest();
-          xhr.open("GET", "/api_ordered?latitude=" + {{ latitude }} + "&longitude=" + {{ longitude }});
-          xhr.onload = function() {
-            document.getElementById("br-cards-row").innerHTML = this.responseText;
-          };
-          xhr.send();
-      {% else %}
-      navigator.geolocation.getCurrentPosition(
-        function(loc) {
-          console.log(loc.coords.latitude, loc.coords.longitude)
-          var userLatLng = new L.LatLng(loc.coords.latitude, loc.coords.longitude);
-          map.setView(userLatLng, 15);
-          var markersInView = false;
-          for (var key in markers) {
-            if (map.getBounds().contains(latlng)) {
-              markersInView = true;
-            }
-          }
-
-          if (!markersInView) {
-            renderWithoutLocation();
-          }
-
-          L.circleMarker(userLatLng, 400).addTo(map);
-
-          var xhr = new XMLHttpRequest();
-          xhr.open("GET", "/api_ordered?latitude=" + loc.coords.latitude + "&longitude=" + loc.coords.longitude);
-          xhr.onload = function() {
-            document.getElementById("br-cards-row").innerHTML = this.responseText;
-          };
-          xhr.send();
-        },
-        function (error) {
-          renderWithoutLocation();
-        },
-        {
-          enableHighAccuracy: false,
-          maximumAge: Infinity,
-          timeout: 5000
-        }
-      );
-      {% endif %}
-
-      var legend = L.control({position: 'bottomright'});
-      legend.onAdd = function(map) {
-        var div = L.DomUtil.create('div', 'info legend');
-        div.innerHTML += '<br>'
-        div.innerHTML += '<p><i style="background: #2AAD27"></i> Free, year-long bathrooms</p>';
-        div.innerHTML += '<p><i style="background: #FFD326"></i> Seasonal bathrooms (e.g. portapotties)</p>';
-        div.innerHTML += '<p><i style="background: #CB2B3E"></i> Fare-controlled or partially inaccessible bathrooms</p>';
-        return div;
-      }
-      
-      legend.addTo(map);
-    }
-  </script>
-
-  <!-- Google tag (gtag.js) -->
+  </style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FBRC7LKLBW"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -147,7 +52,175 @@
 </head>
 <body>
   {{ markers|json_script:"markers-data" }}
-  <div id="map" style="height: 70%;"></div>
+  <div id="map"></div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://kit.fontawesome.com/66634f6c24.js" crossorigin="anonymous"></script>
+  <script>
+  (function() {
+    try {
+      if (typeof L === 'undefined') {
+        var el = document.getElementById('map');
+        if (el) el.innerHTML = '<div style="padding:2em;color:#c00;">Leaflet failed to load.</div>';
+        return;
+      }
+      var mapEl = document.getElementById('map');
+      if (!mapEl) return;
+      var map = L.map('map', {tap: false});
+      map.setView([42.36, -71.06], 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+      var markersData = [];
+      var markersEl = document.getElementById('markers-data');
+      if (markersEl) { try { markersData = JSON.parse(markersEl.textContent); } catch(e) { markersData = []; } }
+      if (!Array.isArray(markersData)) markersData = [];
+      var markerGroup = (L.markerClusterGroup ? L.markerClusterGroup({ chunkedLoading: true }) : L.featureGroup()).addTo(map);
+      function render(m) {
+        var r = (m.remarks || '').replace(/(?:\r\n|\r|\n)/g, '<br>');
+        return "<h3>" + (m.name || '') + "</h3><br><b>Address</b>: <a target=\"_blank\" href=\"https://www.google.com/maps/search/?api=1&query=" + m.latitude + "%2C" + m.longitude + "\">" + (m.address || '') + "</a><br><b>Hours</b>: " + (m.hours || '') + "<br><b>Remarks</b>: " + r;
+      }
+      for (var i = 0; i < markersData.length; i++) {
+        var m = markersData[i];
+        var lat = parseFloat(m.latitude), lon = parseFloat(m.longitude);
+        if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
+        var markerColor = 'marker-icon-2x-green.png';
+        var sr = (m.remarks || '').toLowerCase(), sn = (m.name || '').toLowerCase();
+        if (sr.includes('portapotty') || sr.includes('seasonal')) markerColor = 'marker-icon-2x-yellow.png';
+        else if (sr.includes('inaccessible') || sr.includes('fare control') || sn.includes('school')) markerColor = 'marker-icon-2x-red.png';
+        var icon = L.icon({
+          iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/" + markerColor,
+          shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+          iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        });
+        L.marker([lat, lon], {icon: icon}).bindPopup(render(m)).addTo(markerGroup);
+      }
+      function renderWithoutLocation() {
+        if (markerGroup.getBounds && markerGroup.getBounds().isValid && markerGroup.getBounds().isValid()) {
+          map.fitBounds(markerGroup.getBounds(), { maxZoom: 15, padding: [100, 100] });
+        } else {
+          map.setView([42.36, -71.06], 10);
+        }
+      }
+      function addMarkersToMap(data) {
+        if (!data || !Array.isArray(data)) return;
+        for (var i = 0; i < data.length; i++) {
+          var m = data[i];
+          var lat = parseFloat(m.latitude), lon = parseFloat(m.longitude);
+          if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
+          var markerColor = 'marker-icon-2x-green.png';
+          var sr = (m.remarks || '').toLowerCase(), sn = (m.name || '').toLowerCase();
+          if (sr.indexOf('portapotty') !== -1 || sr.indexOf('seasonal') !== -1) markerColor = 'marker-icon-2x-yellow.png';
+          else if (sr.indexOf('inaccessible') !== -1 || sr.indexOf('fare control') !== -1 || sn.indexOf('school') !== -1) markerColor = 'marker-icon-2x-red.png';
+          var icon = L.icon({
+            iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/" + markerColor,
+            shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+          });
+          L.marker([lat, lon], {icon: icon}).bindPopup(render(m)).addTo(markerGroup);
+        }
+      }
+      function fetchMarkersForViewport() {
+        var b = map.getBounds();
+        if (!b || !b.isValid || !b.isValid()) return;
+        var sw = b.getSouthWest(), ne = b.getNorthEast();
+        var url = "/api/markers?sw_lat=" + sw.lat + "&sw_lon=" + sw.lng + "&ne_lat=" + ne.lat + "&ne_lon=" + ne.lng;
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url);
+        xhr.onload = function() {
+          try {
+            var resp = JSON.parse(this.responseText);
+            markerGroup.clearLayers();
+            if (resp.markers && resp.markers.length) addMarkersToMap(resp.markers);
+          } catch (e) { console.warn("Markers fetch failed:", e); }
+        };
+        xhr.send();
+      }
+      var fetchDebounce;
+      map.on("moveend", function() {
+        clearTimeout(fetchDebounce);
+        fetchDebounce = setTimeout(fetchMarkersForViewport, 250);
+      });
+      map.whenReady(function() { fetchMarkersForViewport(); });
+      {% if latitude %}
+      map.setView([{{ latitude }}, {{ longitude }}], 15);
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "/api_ordered?latitude=" + {{ latitude }} + "&longitude=" + {{ longitude }});
+      xhr.onload = function() { var el = document.getElementById("br-cards-row"); if (el) el.innerHTML = this.responseText; };
+      xhr.send();
+      {% else %}
+      navigator.geolocation.getCurrentPosition(
+        function(loc) {
+          var userLatLng = L.latLng(loc.coords.latitude, loc.coords.longitude);
+          map.setView(userLatLng, 15);
+          L.circleMarker(userLatLng, {radius: 8}).addTo(map);
+          var xhrList = new XMLHttpRequest();
+          xhrList.open("GET", "/api_ordered?latitude=" + loc.coords.latitude + "&longitude=" + loc.coords.longitude);
+          xhrList.onload = function() { var el = document.getElementById("br-cards-row"); if (el) el.innerHTML = this.responseText; };
+          xhrList.send();
+        },
+        function(err) {
+          renderWithoutLocation();
+          var xhrFallback = new XMLHttpRequest();
+          xhrFallback.open("GET", "/api_ordered?latitude=42.36&longitude=-71.06");
+          xhrFallback.onload = function() { var el = document.getElementById("br-cards-row"); if (el) el.innerHTML = this.responseText; };
+          xhrFallback.send();
+        },
+        { enableHighAccuracy: false, maximumAge: 60000, timeout: 5000 }
+      );
+      {% endif %}
+      var legend = L.control({position: 'bottomright'});
+      legend.onAdd = function() {
+        var div = L.DomUtil.create('div', 'info legend');
+        div.innerHTML = '<br><p><i style="background:#2AAD27"></i> Free, year-long</p><p><i style="background:#FFD326"></i> Seasonal</p><p><i style="background:#CB2B3E"></i> Fare-controlled or inaccessible</p>';
+        return div;
+      };
+      legend.addTo(map);
+      map.invalidateSize();
+    } catch (err) {
+      console.error('Map error:', err);
+      var mapEl = document.getElementById('map');
+      if (mapEl) mapEl.innerHTML = '<div style="padding:2em;background:#fee;color:#c00;">Map failed: ' + (err.message || err) + '</div>';
+    }
+    function initPlaceSearch() {
+      var input = document.getElementById('place-search-input');
+      var resultsDiv = document.getElementById('place-results');
+      if (!input || !resultsDiv) return;
+      var debounceTimer;
+      input.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        var q = input.value.trim();
+        if (q.length < 2) { resultsDiv.style.display = 'none'; return; }
+        debounceTimer = setTimeout(function() {
+          fetch('/place_search?q=' + encodeURIComponent(q))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+              resultsDiv.innerHTML = '';
+              if (data.results && data.results.length) {
+                data.results.forEach(function(item) {
+                  var a = document.createElement('a');
+                  a.href = item.city ? ('/map?city=' + encodeURIComponent(item.city)) : ('/map?latitude=' + item.lat + '&longitude=' + item.lon);
+                  a.className = 'list-group-item list-group-item-action';
+                  a.textContent = item.display_name;
+                  resultsDiv.appendChild(a);
+                });
+                resultsDiv.style.display = 'block';
+              } else { resultsDiv.style.display = 'none'; }
+            })
+            .catch(function() { resultsDiv.style.display = 'none'; });
+        }, 300);
+      });
+      input.addEventListener('blur', function() { setTimeout(function() { resultsDiv.style.display = 'none'; }, 200); });
+      input.addEventListener('focus', function() { if (resultsDiv && resultsDiv.children.length) resultsDiv.style.display = 'block'; });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initPlaceSearch);
+    } else {
+      initPlaceSearch();
+    }
+  })();
+  </script>
   <div class="container-fluid">
     <div class="row">
       <div class="col">
@@ -165,82 +238,12 @@
         <div class="tab-content" id="nav-tabContent">
           <div class="tab-pane fade show active" id="nav-brlist" role="tabpanel" aria-labelledby="nav-brlist-tab" tabindex="0">
             <br>
-            <div class="row" id="town-dropdown">
-              <div class="col text-center">
-                <div class="dropdown">
-                  <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    View bathrooms for town...
-                  </button>
-                  <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/">See all towns</a></li>
-                    <li><a class="dropdown-item" href="/map?city=arlington-massachusetts">Arlington, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=attleboro-massachusetts">Attleboro, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=andover-massachusetts">Andover, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=bedford-massachusetts">Bedford, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=belmont-massachusetts">Belmont, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=berkley-massachusetts">Berkley, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=beverly-massachusetts">Beverly, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=braintree-massachusetts">Braintree, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=brookline-massachusetts">Brookline, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=brighton-massachusetts">Brighton, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=boston-massachusetts">Boston, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=burlington-massachusetts">Burlington, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=cambridge-massachusetts">Cambridge, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=charlestown-massachusetts">Charlestown, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=chelsea-massachusetts">Chelsea, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=chestnut%20hill-massachusetts">Chestnut Hill, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=concord-massachusetts">Concord, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=dighton-massachusetts">Dighton, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=dorchester-massachusetts">Dorchester, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=easton-massachusetts">Easton, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=everett-massachusetts">Everett, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=fall%20river-massachusetts">Fall River, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=freetown-massachusetts">Freetown, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=framingham-massachusetts">Framingham, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=gloucester-massachusetts">Gloucester, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=hull-massachusetts">Hull, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=hyde%20park-massachusetts">Hyde Park, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=lexington-massachusetts">Lexington, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=lynn-massachusetts">Lynn, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=mansfield-massachusetts">Mansfield, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=marblehead-massachusetts">Marblehead, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=marlborough-massachusetts">Marlborough, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=malden-massachusetts">Malden, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=manchester-by-the-sea-massachusetts">Manchester-by-the-Sea, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=mattapan-massachusetts">Mattapan, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=medford-massachusetts">Medford, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=milton-massachusetts">Milton, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=nahant-massachusetts">Nahant, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=natick-massachusetts">Natick, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=needham-massachusetts">Needham, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=new%20bedford-massachusetts">New Bedford, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=newton-massachusetts">Newton, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=north%20andover-massachusetts">North Andover, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=north%20attleborough-massachusetts">North Attleborough, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=norton-massachusetts">Norton, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=quincy-massachusetts">Quincy, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=randolph-massachusetts">Randolph, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=raynham-massachusetts">Raynham, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=rehoboth-massachusetts">Rehoboth, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=revere-massachusetts">Revere, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=roslindale-massachusetts">Roslindale, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=roxbury-massachusetts">Roxbury, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=salem-massachusetts">Salem, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=saugus-massachusetts">Saugus, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=seekonk-massachusetts">Seekonk, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=somerville-massachusetts">Somerville, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=swampscott-massachusetts">Swampscott, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=taunton-massachusetts">Taunton, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=waltham-massachusetts">Waltham, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=watertown-massachusetts">Watertown, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=wayland-massachusetts">Wayland, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=wellesley-massachusetts">Wellesley, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=west%20roxbury-massachusetts">West Roxbury, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=weston-massachusetts">Weston, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=winchester-massachusetts">Winchester, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=winthrop-massachusetts">Winthrop, MA</a></li>
-                    <li><a class="dropdown-item" href="/map?city=woburn-massachusetts">Woburn, MA</a></li>
-                  </ul>
+            <div class="row" id="town-search">
+              <div class="col-md-8 col-lg-6 mx-auto">
+                <div class="position-relative">
+                  <input type="text" id="place-search-input" class="form-control form-control-lg" placeholder="Search towns (e.g. Boston, San Francisco, etc)..." autocomplete="off">
+                  <div id="place-results" class="list-group position-absolute w-100 shadow" style="top: 100%; z-index: 1000; display: none;"></div>
+                  <small class="text-muted d-block mt-1"><a href="/map">See all locations</a></small>
                 </div>
               </div>
             </div>

@@ -1,0 +1,9 @@
+Django>=2.2,<3
+geopy
+djangorestframework
+django-leaflet
+django-geojson
+django-pwa
+pyshp>=2.3
+pyproj>=3.0
+zipcodes>=1.0

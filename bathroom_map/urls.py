@@ -22,7 +22,7 @@ from django.views.generic import TemplateView
 from rest_framework import routers, serializers, viewsets
 
 from .models import Bathroom
-from .views import bathrooms_view, bathrooms_order_by_distance_view
+from .views import bathrooms_view, bathrooms_order_by_distance_view, place_search_view, markers_json_view
 
 class BathroomSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -37,6 +37,8 @@ router = routers.DefaultRouter()
 router.register(r'bathrooms', BathroomViewSet)
 
 urlpatterns = [
+    path('place_search', place_search_view, name='place_search'),
+    path('api/markers', markers_json_view, name='markers_json'),
     path('api/', include(router.urls)),
     path('admin/', admin.site.urls),
     path('', bathrooms_view, name='home'),

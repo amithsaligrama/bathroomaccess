@@ -1,0 +1,27 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+  <h1>Import Locations from Shapefile</h1>
+  <p>
+    Upload a <strong>ZIP file</strong> containing your Shapefile components:
+    <code>.shp</code>, <code>.shx</code>, <code>.dbf</code>, and <code>.prj</code>.
+    The <code>.prj</code> file is required if your data uses State Plane, UTM, or
+    other projected coordinates (not lat/lon).
+  </p>
+  <p>
+    Supported: <strong>Point</strong> shapefiles. The importer reads coordinates
+    from the geometry and maps common attribute names (name, address, town, zip,
+    etc.) to location fields.
+  </p>
+  <ol style="margin: 1em 0;">
+    <li>Zip the shapefile files (e.g. <code>.shp</code>, <code>.shx</code>, <code>.dbf</code>, <code>.prj</code>) into one .zip</li>
+    <li>Upload the .zip below</li>
+  </ol>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Upload Shapefile" class="default">
+    <a class="button" href="..">Cancel</a>
+  </form>
+{% endblock %}

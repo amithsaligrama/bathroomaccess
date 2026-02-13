@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+  <h1>Import Bathrooms from CSV</h1>
+  <p>
+    Required columns: <code>address</code>, <code>zip</code>. Optional:
+    <code>name</code> (or <code>libname</code>), <code>latitude</code>,
+    <code>longitude</code> (or <code>longitud</code>), <code>city</code>,
+    <code>hours</code>, <code>remarks</code>.
+  </p>
+  <p>
+    If latitude/longitude are blank, the address and zip will be geocoded.
+    UTF-8, Windows-1252, and Latin-1 encodings are supported.
+  </p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Upload CSV" class="default">
+    <a class="button" href="..">Cancel</a>
+  </form>
+{% endblock %}
