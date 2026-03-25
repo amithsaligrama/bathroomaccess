@@ -88,8 +88,8 @@
         if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
         var markerColor = 'marker-icon-2x-green.png';
         var sr = (m.remarks || '').toLowerCase(), sn = (m.name || '').toLowerCase();
-        if (sr.includes('portapotty') || sr.includes('seasonal')) markerColor = 'marker-icon-2x-yellow.png';
-        else if (sr.includes('inaccessible') || sr.includes('fare control') || sn.includes('school')) markerColor = 'marker-icon-2x-red.png';
+        if (sr.includes('portapotty') || sr.includes('seasonal') || sr.includes('limited_access') || sr.includes('limited access') || sr.includes('partially accessible')) markerColor = 'marker-icon-2x-yellow.png';
+        else if (sr.includes('inaccessible') || sr.includes('not accessible') || sr.includes('fare control') || sr.includes('not_publicly') || sr.includes('staff_only') || sr.includes('employee_only') || sn.includes('school')) markerColor = 'marker-icon-2x-red.png';
         var icon = L.icon({
           iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/" + markerColor,
           shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
@@ -112,8 +112,8 @@
           if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) continue;
           var markerColor = 'marker-icon-2x-green.png';
           var sr = (m.remarks || '').toLowerCase(), sn = (m.name || '').toLowerCase();
-          if (sr.indexOf('portapotty') !== -1 || sr.indexOf('seasonal') !== -1) markerColor = 'marker-icon-2x-yellow.png';
-          else if (sr.indexOf('inaccessible') !== -1 || sr.indexOf('fare control') !== -1 || sn.indexOf('school') !== -1) markerColor = 'marker-icon-2x-red.png';
+          if (sr.indexOf('portapotty') !== -1 || sr.indexOf('seasonal') !== -1 || sr.indexOf('limited_access') !== -1 || sr.indexOf('limited access') !== -1 || sr.indexOf('partially accessible') !== -1) markerColor = 'marker-icon-2x-yellow.png';
+          else if (sr.indexOf('inaccessible') !== -1 || sr.indexOf('not accessible') !== -1 || sr.indexOf('fare control') !== -1 || sr.indexOf('not_publicly') !== -1 || sr.indexOf('staff_only') !== -1 || sr.indexOf('employee_only') !== -1 || sn.indexOf('school') !== -1) markerColor = 'marker-icon-2x-red.png';
           var icon = L.icon({
             iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/" + markerColor,
             shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
@@ -174,7 +174,7 @@
       var legend = L.control({position: 'bottomright'});
       legend.onAdd = function() {
         var div = L.DomUtil.create('div', 'info legend');
-        div.innerHTML = '<br><p><i style="background:#2AAD27"></i> Free, year-long</p><p><i style="background:#FFD326"></i> Seasonal</p><p><i style="background:#CB2B3E"></i> Fare-controlled or inaccessible</p>';
+        div.innerHTML = '<br><p><i style="background:#2AAD27"></i> Fully public</p><p><i style="background:#FFD326"></i> Limited / seasonal / portable</p><p><i style="background:#CB2B3E"></i> Restricted or inaccessible</p>';
         return div;
       };
       legend.addTo(map);

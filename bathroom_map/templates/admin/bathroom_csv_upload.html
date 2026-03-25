@@ -4,13 +4,24 @@
 {% block content %}
   <h1>Import Bathrooms from CSV</h1>
   <p>
-    Required columns: <code>address</code>, <code>zip</code>. Optional:
-    <code>name</code> (or <code>libname</code>), <code>latitude</code>,
-    <code>longitude</code> (or <code>longitud</code>), <code>city</code>,
-    <code>hours</code>, <code>remarks</code>.
+    Each row needs coordinates (<code>latitude</code> and <code>longitude</code>,
+    or a <code>point</code> column in WKT <code>POINT (lon lat)</code>) or a
+    geocodable street address with <code>zip</code> or <code>zip_code</code>.
+    If <code>resource_type</code> is present, only <code>restroom</code> rows are
+    imported. <code>public_access_hours_*</code>, <code>public_access_days</code>,
+    <code>notes</code>, <code>park</code>, <code>source</code>, and
+    <code>access</code> are mapped into hours and remarks.
   </p>
   <p>
-    If latitude/longitude are blank, the address and zip will be geocoded.
+    NYC-style columns are supported too: <code>facility name</code>,
+    <code>hours of operation</code>, <code>location</code> (POINT WKT),
+    <code>accessibility</code>, <code>restroom type</code>,
+    <code>changing stations</code>, <code>additional notes</code>, and
+    <code>website</code>.
+  </p>
+  <p>
+    Missing zips are filled from another row with the same <code>park</code> or
+    <code>analysis_neighborhood</code>, then by reverse-geocoding.
     UTF-8, Windows-1252, and Latin-1 encodings are supported.
   </p>
   <form method="post" enctype="multipart/form-data">

@@ -1,7 +1,9 @@
 import csv
 import io
+import json
 import math
 import os
+from collections import defaultdict
 import re
 import tempfile
 import zipfile
@@ -75,73 +77,162 @@ class BathroomAdmin(admin.ModelAdmin):
                     return redirect("..")
 
                 reader = csv.DictReader(io.StringIO(decoded))
-                header = [
-                    field.strip().lower() for field in (reader.fieldnames or [])
-                ]
-                required = {"address", "zip"}
-                missing = required - set(header)
-                if missing:
-                    messages.error(
-                        request,
-                        "Missing required columns: {}.".format(", ".join(sorted(missing))),
-                    )
-                    return redirect("..")
+                fieldnames_raw = reader.fieldnames or []
+                header = [field.strip().lower() for field in fieldnames_raw]
+                has_resource_type = "resource_type" in header
+                is_nyc_csv = "facility name" in header or "changing stations" in header or "hours of operation" in header
+                is_the_geom_csv = "the_geom" in header or "geom" in header or "geometry" in header
+                has_toilets_col = "toilets" in header
 
+                rows_raw = list(reader)
                 geocoder = Nominatim(user_agent="bathroom_map_3")
                 created_count = 0
                 errors = []
 
-                for row_index, row in enumerate(reader, start=2):
+                candidates = []
+                for row_index, row in enumerate(rows_raw, start=2):
                     normalized_row = self._normalize_row(row)
+                    if has_resource_type:
+                        rt = (normalized_row.get("resource_type") or "").strip().lower()
+                        if rt != "restroom":
+                            continue
+                    if has_toilets_col:
+                        try:
+                            toilets_cnt = int((normalized_row.get("toilets") or "0").strip() or "0")
+                        except Exception:
+                            toilets_cnt = 0
+                        if toilets_cnt <= 0:
+                            continue
+                    candidates.append((row_index, normalized_row))
+
+                place_to_zips = self._build_place_zip_index(
+                    [nr for _, nr in candidates]
+                )
+                reverse_zip_cache = {}
+                reverse_zip_cache_round_decimals = (
+                    1 if is_nyc_csv else (2 if is_the_geom_csv else 4)
+                )
+
+                for row_index, normalized_row in candidates:
                     name = (
                         normalized_row.get("name")
+                        or normalized_row.get("facility")
+                        or normalized_row.get("facility name")
+                        or normalized_row.get("facility_name")
                         or normalized_row.get("libname")
                         or ""
                     ).strip()
-                    address = (normalized_row.get("address") or "").strip()
+                    if not name:
+                        name = (normalized_row.get("site_name") or "").strip()
+                    address = (
+                        normalized_row.get("address")
+                        or normalized_row.get("street address")
+                        or ""
+                    ).strip()
                     city = (normalized_row.get("city") or "").strip()
+                    state = (normalized_row.get("state") or "").strip()
                     if city and address:
                         address = "{}, {}".format(address, city)
-                    zip_code = (normalized_row.get("zip") or "").strip()
-                    if len(zip_code) > 5 and zip_code[:5].isdigit():
-                        zip_code = zip_code[:5]
-                    hours_raw = (
-                        normalized_row.get("hours") or ""
-                    ).strip()
-                    if hours_raw and not self._is_bogus_hours(hours_raw):
-                        hours = hours_raw
-                    else:
-                        hours = ""
-                    remarks = (normalized_row.get("remarks") or "").strip()
+                    elif city and not address:
+                        address = city
+                    if state and address and state.upper() not in address.upper():
+                        address = "{}, {}".format(address, state)
 
-                    if not address or not zip_code:
-                        errors.append(
-                            "Row {}: address and zip are required.".format(row_index)
+                    zip_code = self._normalize_zip_code(
+                        normalized_row.get("zip") or ""
+                    )
+                    if not zip_code:
+                        zip_code = self._zip_from_same_place(
+                            normalized_row, place_to_zips
                         )
-                        continue
+
+                    if is_the_geom_csv and not address:
+                        # Some datasets only provide a facility/address label plus POINT geometry.
+                        address = (name or "").strip()
 
                     latitude, longitude = self._parse_lat_long(
                         normalized_row, row_index, errors
                     )
-                    if not latitude or not longitude:
+                    point_raw = (
+                        normalized_row.get("point")
+                        or normalized_row.get("location")
+                        or normalized_row.get("the_geom")
+                        or normalized_row.get("geom")
+                        or ""
+                    ).strip()
+                    if (latitude is None or longitude is None) and point_raw:
+                        plat, plon = self._parse_point_wkt(
+                            point_raw
+                        )
+                        if plat is not None and plon is not None:
+                            latitude, longitude = plat, plon
+
+                    if (latitude is None or longitude is None) and address and zip_code:
                         try:
                             location = geocoder.geocode(
                                 "{}, {}".format(address, zip_code)
                             )
                             if location:
-                                latitude, longitude = (
-                                    Decimal(str(location.latitude)),
-                                    Decimal(str(location.longitude)),
+                                latitude = Decimal(
+                                    str(round(float(location.latitude), 6))
+                                )
+                                longitude = Decimal(
+                                    str(round(float(location.longitude), 6))
                                 )
                         except Exception:
                             pass
+
+                    if latitude is None or longitude is None:
+                        errors.append(
+                            "Row {}: need latitude/longitude, point column, "
+                            "or geocodable address + zip.".format(row_index)
+                        )
+                        continue
+
+                    if not zip_code:
+                        zip_code = self._reverse_geocode_zip_cached(
+                            geocoder,
+                            latitude,
+                            longitude,
+                            reverse_zip_cache,
+                            reverse_zip_cache_round_decimals,
+                        )
+
+                    if not zip_code:
+                        # If reverse geocoding fails/rate-limits, still import the row.
+                        # NYC rows get a NYC placeholder zip for cleaner display.
+                        zip_code = "10001" if is_nyc_csv else "00000"
+
+                    # Prefer showing a real location label instead of a generic fallback.
+                    if not (address or "").strip() and (name or "").strip():
+                        address = (name or "").strip()
+                    addr_stripped = (address or "").strip()
+                    if not addr_stripped:
+                        address = "View on Google Maps"
+
+                    hours = self._build_hours_from_row(normalized_row)
+                    access_raw = (
+                        normalized_row.get("access")
+                        or normalized_row.get("accessibility")
+                        or ""
+                    ).strip()
+                    remarks = self._build_remarks_from_row(
+                        normalized_row, access_raw
+                    )
+                    user_remarks = (normalized_row.get("remarks") or "").strip()
+                    if user_remarks:
+                        remarks = (
+                            "{}\n\n{}".format(user_remarks, remarks)
+                            if remarks
+                            else user_remarks
+                        )
 
                     Bathroom.objects.create(
                         name=name,
                         address=address,
                         zip=zip_code,
-                        latitude=latitude or Decimal("0"),
-                        longitude=longitude or Decimal("0"),
+                        latitude=latitude,
+                        longitude=longitude,
                         hours=hours,
                         remarks=remarks,
                     )
@@ -354,10 +445,207 @@ class BathroomAdmin(admin.ModelAdmin):
         return False
 
     def _normalize_row(self, row):
-        return {
-            (key or "").strip().lower(): value
-            for key, value in row.items()
-        }
+        n = {}
+        for key, value in row.items():
+            k = (key or "").strip().lower()
+            if value is None:
+                n[k] = ""
+            elif isinstance(value, str):
+                n[k] = value.strip()
+            else:
+                n[k] = str(value).strip()
+        if n.get("zip_code") and not n.get("zip"):
+            n["zip"] = n["zip_code"]
+        if n.get("postal") and not n.get("zip"):
+            n["zip"] = n["postal"]
+        if n.get("postal_code") and not n.get("zip"):
+            n["zip"] = n["postal_code"]
+        return n
+
+    def _normalize_zip_code(self, z):
+        if z is None:
+            return ""
+        zip_code = str(z).strip()
+        if not zip_code:
+            return ""
+        if "-" in zip_code:
+            zip_code = zip_code.split("-")[0]
+        if len(zip_code) >= 5 and zip_code[:5].isdigit():
+            return zip_code[:5]
+        if len(zip_code) == 5 and zip_code.isdigit():
+            return zip_code
+        return ""
+
+    def _build_place_zip_index(self, normalized_rows):
+        place_to_zips = defaultdict(set)
+        for nr in normalized_rows:
+            z = self._normalize_zip_code(nr.get("zip") or "")
+            if not z:
+                continue
+            park = (nr.get("park") or "").strip().lower()
+            if park:
+                place_to_zips[("park", park)].add(z)
+            neigh = (nr.get("analysis_neighborhood") or "").strip().lower()
+            if neigh:
+                place_to_zips[("neighborhood", neigh)].add(z)
+        return place_to_zips
+
+    def _zip_from_same_place(self, nr, place_to_zips):
+        park = (nr.get("park") or "").strip().lower()
+        if park and place_to_zips.get(("park", park)):
+            return sorted(place_to_zips[("park", park)])[0]
+        neigh = (nr.get("analysis_neighborhood") or "").strip().lower()
+        if neigh and place_to_zips.get(("neighborhood", neigh)):
+            return sorted(place_to_zips[("neighborhood", neigh)])[0]
+        return ""
+
+    def _parse_point_wkt(self, point_str):
+        if not point_str:
+            return None, None
+        m = re.search(
+            r"POINT\s*\(\s*([-\d.]+)\s+([-\d.]+)\s*\)",
+            str(point_str).strip(),
+            re.I,
+        )
+        if not m:
+            return None, None
+        try:
+            lon_f, lat_f = float(m.group(1)), float(m.group(2))
+            if not (math.isfinite(lat_f) and math.isfinite(lon_f)):
+                return None, None
+            if lat_f < -90 or lat_f > 90 or lon_f < -180 or lon_f > 180:
+                return None, None
+            return (
+                Decimal(str(round(lat_f, 6))),
+                Decimal(str(round(lon_f, 6))),
+            )
+        except (ValueError, TypeError):
+            return None, None
+
+    def _reverse_geocode_zip(self, geocoder, latitude, longitude):
+        try:
+            loc = geocoder.reverse(
+                (float(latitude), float(longitude)), language="en", timeout=10
+            )
+            if not loc or not loc.raw:
+                return ""
+            addr = loc.raw.get("address") or {}
+            pc = addr.get("postcode") or ""
+            return self._normalize_zip_code(pc)
+        except Exception:
+            return ""
+
+    def _reverse_geocode_zip_cached(
+        self, geocoder, latitude, longitude, cache, round_decimals=4
+    ):
+        try:
+            key = (
+                round(float(latitude), round_decimals),
+                round(float(longitude), round_decimals),
+            )
+        except Exception:
+            key = None
+        if key is not None and key in cache:
+            return cache[key]
+        z = self._reverse_geocode_zip(geocoder, latitude, longitude)
+        if key is not None:
+            cache[key] = z
+        return z
+
+    def _fmt_time_hm(self, t):
+        t = (t or "").strip()
+        if not t:
+            return ""
+        parts = t.split(":")
+        if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
+            return "{}:{}".format(parts[0].zfill(2), parts[1].zfill(2))
+        return t
+
+    def _hours_from_notes_json(self, notes):
+        if "{" not in notes or "}" not in notes:
+            return ""
+        try:
+            data = json.loads(notes)
+        except (json.JSONDecodeError, TypeError):
+            return ""
+        if isinstance(data, dict):
+            return "; ".join(
+                "{}: {}".format(k, v) for k, v in sorted(data.items())
+            )
+        return ""
+
+    def _build_hours_from_row(self, row):
+        parts = []
+        raw_hours = (row.get("hours") or "").strip()
+        if raw_hours and not self._is_bogus_hours(raw_hours):
+            parts.append(raw_hours)
+        op_hours = (row.get("hours of operation") or row.get("hours_of_operation") or "").strip()
+        if op_hours and op_hours not in parts and not self._is_bogus_hours(op_hours):
+            parts.append(op_hours)
+        open_season = (row.get("open") or "").strip()
+        if open_season and open_season.lower() not in ("future", "closed", "closed for construction"):
+            if open_season not in parts:
+                parts.append(open_season)
+
+        open_h = (row.get("public_access_hours_open") or "").strip()
+        close_h = (row.get("public_access_hours_close") or "").strip()
+        days = (row.get("public_access_days") or "").strip()
+        if open_h and close_h:
+            t_open = self._fmt_time_hm(open_h)
+            t_close = self._fmt_time_hm(close_h)
+            line = (
+                "{} {}–{}".format(days, t_open, t_close)
+                if days
+                else "{}–{}".format(t_open, t_close)
+            )
+            if line not in parts:
+                parts.append(line)
+
+        notes = (row.get("notes") or "").strip()
+        if notes:
+            jh = self._hours_from_notes_json(notes)
+            if jh and jh not in parts:
+                parts.append(jh)
+
+        return "; ".join(parts)
+
+    def _build_remarks_from_row(self, row, access_raw):
+        chunks = []
+        for label, key in (
+            ("Park", "park"),
+            ("Source", "source"),
+            ("Neighborhood", "analysis_neighborhood"),
+            ("Supervisor district", "supervisor_district"),
+            ("Location type", "location type"),
+            ("Operator", "operator"),
+            ("Status", "status"),
+            ("Restroom type", "restroom type"),
+            ("Changing stations", "changing stations"),
+            ("Website", "website"),
+            # Generic restroom datasets (example: LA "Restroom_*.csv")
+            ("Level", "level"),
+            ("Gender", "gender"),
+            ("Toilets", "toilets"),
+            ("Urinals", "urinals"),
+            ("Faucets", "faucets"),
+            ("Dryer tower", "dryertower"),
+            ("Soap dispenser", "soap_disp"),
+            ("Year built", "year_built"),
+            ("Maintenance date", "maint_date"),
+            ("Janitor", "janitor"),
+        ):
+            v = (row.get(key) or "").strip()
+            if v:
+                chunks.append("{}: {}".format(label, v))
+        extra_notes = (row.get("additional notes") or row.get("additional_notes") or "").strip()
+        if extra_notes:
+            chunks.append("Additional notes: {}".format(extra_notes))
+        notes = (row.get("notes") or "").strip()
+        if notes:
+            chunks.append("Notes: {}".format(notes))
+        if access_raw:
+            chunks.append("Access: {}".format(access_raw))
+        return "\n".join(chunks)
 
     def _parse_lat_long(self, row, row_index, errors):
         latitude = None
@@ -382,14 +670,22 @@ class BathroomAdmin(admin.ModelAdmin):
                     "Row {}: invalid longitude '{}'.".format(row_index, lon_raw)
                 )
 
+        if latitude is not None and longitude is not None:
+            latitude = Decimal(str(round(float(latitude), 6)))
+            longitude = Decimal(str(round(float(longitude), 6)))
+
         return latitude, longitude
     
     def save_model(self, request, obj, form, change):
-        geocoder = Nominatim(user_agent='bathroom_map_3')
-        location = geocoder.geocode(obj.address + ", " + obj.zip)
         if not (obj.latitude and obj.longitude):
-            try:
-                obj.latitude, obj.longitude = location.latitude, location.longitude
-            except:
-                pass
+            addr = (obj.address or "").strip()
+            if addr and addr != "View on Google Maps":
+                geocoder = Nominatim(user_agent="bathroom_map_3")
+                try:
+                    location = geocoder.geocode("{}, {}".format(addr, obj.zip))
+                    if location:
+                        obj.latitude = location.latitude
+                        obj.longitude = location.longitude
+                except Exception:
+                    pass
         super().save_model(request, obj, form, change)
