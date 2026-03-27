@@ -76,7 +76,7 @@ class BathroomAdmin(admin.ModelAdmin):
                     )
                     return redirect("..")
 
-                reader = csv.DictReader(io.StringIO(decoded))
+                reader = csv.DictReader(io.StringIO(decoded, newline=""))
                 fieldnames_raw = reader.fieldnames or []
                 header = [field.strip().lower() for field in fieldnames_raw]
                 has_resource_type = "resource_type" in header
@@ -116,6 +116,7 @@ class BathroomAdmin(admin.ModelAdmin):
                 for row_index, normalized_row in candidates:
                     name = (
                         normalized_row.get("name")
+                        or normalized_row.get("location")
                         or normalized_row.get("facility")
                         or normalized_row.get("facility name")
                         or normalized_row.get("facility_name")
@@ -438,9 +439,10 @@ class BathroomAdmin(admin.ModelAdmin):
         if not hours or not hours.strip():
             return True
         s = hours.strip()
-        if re.match(r"^[\d\s,\.]+$", s):
+        if re.match(r"^[+\-]?[\d\s,\.]+$", s):
             return True
-        if len(s) <= 4 and s.replace(".", "").isdigit():
+        compact = s.replace(".", "").replace("-", "").replace("+", "")
+        if len(s) <= 5 and compact.isdigit():
             return True
         return False
 
@@ -633,6 +635,7 @@ class BathroomAdmin(admin.ModelAdmin):
             ("Year built", "year_built"),
             ("Maintenance date", "maint_date"),
             ("Janitor", "janitor"),
+            ("Heated", "heated"),
         ):
             v = (row.get(key) or "").strip()
             if v:
@@ -651,8 +654,13 @@ class BathroomAdmin(admin.ModelAdmin):
         latitude = None
         longitude = None
 
-        lat_raw = (row.get("latitude") or "").strip()
-        lon_raw = (row.get("longitude") or row.get("longitud") or "").strip()
+        lat_raw = (row.get("latitude") or row.get("y") or "").strip()
+        lon_raw = (
+            row.get("longitude")
+            or row.get("longitud")
+            or row.get("x")
+            or ""
+        ).strip()
 
         if lat_raw:
             try:

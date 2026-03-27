@@ -9,7 +9,7 @@ US_STATE_ABBREVS = frozenset([
     "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
     "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
     "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
-    "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "DC",
+    "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY", "DC", "PR",
 ])
 
 # Map state abbreviation to full name (for city URL slugs like belmont-massachusetts)
@@ -27,6 +27,7 @@ STATE_ABBREV_TO_FULL = {
     "SD": "south-dakota", "TN": "tennessee", "TX": "texas", "UT": "utah",
     "VT": "vermont", "VA": "virginia", "WA": "washington", "WV": "west-virginia",
     "WI": "wisconsin", "WY": "wyoming", "DC": "district-of-columbia",
+    "PR": "puerto-rico",
 }
 
 

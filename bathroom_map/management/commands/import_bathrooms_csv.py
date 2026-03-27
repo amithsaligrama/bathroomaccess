@@ -50,8 +50,8 @@ def _normalize_zip_code(z):
 def _parse_lat_long(row, errors, row_index):
     latitude = None
     longitude = None
-    lat_raw = (row.get("latitude") or "").strip()
-    lon_raw = (row.get("longitude") or row.get("longitud") or "").strip()
+    lat_raw = (row.get("latitude") or row.get("y") or "").strip()
+    lon_raw = (row.get("longitude") or row.get("longitud") or row.get("x") or "").strip()
 
     if lat_raw:
         try:
@@ -97,9 +97,10 @@ def _is_bogus_hours(hours):
     if not hours or not hours.strip():
         return True
     s = hours.strip()
-    if re.match(r"^[\d\s,\.]+$", s):
+    if re.match(r"^[+\-]?[\d\s,\.]+$", s):
         return True
-    if len(s) <= 4 and s.replace(".", "").isdigit():
+    compact = s.replace(".", "").replace("-", "").replace("+", "")
+    if len(s) <= 5 and compact.isdigit():
         return True
     return False
 
@@ -232,6 +233,7 @@ def _build_remarks_from_row(row, access_raw):
         ("Year built", "year_built"),
         ("Maintenance date", "maint_date"),
         ("Janitor", "janitor"),
+        ("Heated", "heated"),
     ):
         v = (row.get(key) or "").strip()
         if v:
@@ -285,7 +287,7 @@ class Command(BaseCommand):
         if decoded is None:
             raise ValueError("Could not decode CSV. Save as UTF-8.")
 
-        reader = csv.DictReader(io.StringIO(decoded))
+        reader = csv.DictReader(io.StringIO(decoded, newline=""))
         header = [(f or "").strip().lower() for f in (reader.fieldnames or [])]
         has_resource_type = "resource_type" in header
         is_nyc_csv = (
@@ -326,7 +328,7 @@ class Command(BaseCommand):
         )
 
         for row_index, nr in candidates:
-            name = (nr.get("name") or nr.get("facility") or nr.get("facility name") or nr.get("facility_name") or nr.get("libname") or "").strip()
+            name = (nr.get("name") or nr.get("location") or nr.get("facility") or nr.get("facility name") or nr.get("facility_name") or nr.get("libname") or "").strip()
             if not name:
                 name = (nr.get("site_name") or "").strip()
 
