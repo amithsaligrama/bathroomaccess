@@ -1,4 +1,5 @@
 Django>=2.2,<3
+whitenoise>=5.3,<6
 # Python 3.13 removed stdlib `cgi`; Django 2.x still imports it for multipart parsing.
 legacy-cgi; python_version >= "3.13"
 geopy
