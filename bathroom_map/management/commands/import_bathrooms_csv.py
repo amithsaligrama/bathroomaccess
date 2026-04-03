@@ -13,6 +13,31 @@ from geopy.geocoders import Nominatim
 from bathroom_map.models import Bathroom
 
 
+def _row_display_name(row):
+    """
+    Choose a human-readable title. Never use WKT geometry (e.g. NYC 'Location' = POINT (...))
+    as the name — prefer Facility Name and other labels first.
+    """
+    keys_priority = (
+        "name",
+        "facility name",
+        "facility_name",
+        "facility",
+        "libname",
+    )
+    for key in keys_priority:
+        v = (row.get(key) or "").strip()
+        if v:
+            return v
+    site = (row.get("site_name") or "").strip()
+    if site:
+        return site
+    loc = (row.get("location") or "").strip()
+    if loc and not re.match(r"^\s*POINT\s*\(", loc, re.I):
+        return loc
+    return ""
+
+
 def _normalize_row(row):
     n = {}
     for key, value in row.items():
@@ -127,8 +152,51 @@ def _hours_from_notes_json(notes):
     return ""
 
 
-def _build_hours_from_row(row):
+def _is_year_round_open(open_val):
+    """True if NYC 'Open' column indicates year-round (or empty = unknown, treat as not seasonal)."""
+    if not (open_val or "").strip():
+        return True
+    o = (open_val or "").strip().lower().replace("-", " ")
+    o = re.sub(r"\s+", " ", o)
+    return o in ("year round", "yearround") or o.startswith("year round")
+
+
+def _build_nyc_remarks(row):
+    """NYC Public Restrooms CSV: remarks only from user-specified fields (map uses keywords for pin colors)."""
+    lines = []
+    open_val = (row.get("open") or "").strip()
+    if open_val:
+        if not _is_year_round_open(open_val):
+            lines.append("Seasonal.")
+        lines.append("Open: {}".format(open_val))
+    acc = (row.get("accessibility") or "").strip()
+    if acc:
+        lines.append("Accessibility: {}".format(acc))
+    rtype = (row.get("restroom type") or row.get("restroom_type") or "").strip()
+    if rtype:
+        lines.append("Restroom type: {}".format(rtype))
+    changing = (row.get("changing stations") or row.get("changing_stations") or "").strip()
+    if changing:
+        lines.append("Changing station: {}".format(changing))
+    extra = (row.get("additional notes") or row.get("additional_notes") or "").strip()
+    if extra:
+        lines.append("Additional notes: {}".format(extra))
+    site = (row.get("website") or "").strip()
+    if site:
+        lines.append("Website: {}".format(site))
+    return "\n".join(lines)
+
+
+def _build_hours_from_row(row, is_nyc_csv=False):
     parts = []
+    if is_nyc_csv:
+        op_hours = (
+            row.get("hours of operation") or row.get("hours_of_operation") or ""
+        ).strip()
+        if op_hours and not _is_bogus_hours(op_hours):
+            parts.append(op_hours)
+        return "; ".join(parts)
+
     raw_hours = (row.get("hours") or "").strip()
     if raw_hours and not _is_bogus_hours(raw_hours):
         parts.append(raw_hours)
@@ -209,7 +277,10 @@ def _reverse_geocode_zip_cached(
     return z
 
 
-def _build_remarks_from_row(row, access_raw):
+def _build_remarks_from_row(row, access_raw, is_nyc_csv=False):
+    if is_nyc_csv:
+        return _build_nyc_remarks(row)
+
     chunks = []
     for label, key in (
         ("Park", "park"),
@@ -317,6 +388,10 @@ class Command(BaseCommand):
                     toilets_cnt = 0
                 if toilets_cnt <= 0:
                     continue
+            if is_nyc_csv:
+                st = (nr.get("status") or "").strip().lower()
+                if st != "operational":
+                    continue
             candidates.append((row_index, nr))
             if limit and len(candidates) >= limit:
                 break
@@ -328,9 +403,7 @@ class Command(BaseCommand):
         )
 
         for row_index, nr in candidates:
-            name = (nr.get("name") or nr.get("location") or nr.get("facility") or nr.get("facility name") or nr.get("facility_name") or nr.get("libname") or "").strip()
-            if not name:
-                name = (nr.get("site_name") or "").strip()
+            name = _row_display_name(nr)
 
             address = (nr.get("address") or nr.get("street address") or "").strip()
             city = (nr.get("city") or "").strip()
@@ -380,10 +453,12 @@ class Command(BaseCommand):
                 address = (name or "").strip()
             if not (address or "").strip():
                 address = "View on Google Maps"
+            if is_nyc_csv and name:
+                address = "{}, New York, NY".format(name)
 
-            hours = _build_hours_from_row(nr)
+            hours = _build_hours_from_row(nr, is_nyc_csv=is_nyc_csv)
             access_raw = (nr.get("access") or nr.get("accessibility") or "").strip()
-            remarks = _build_remarks_from_row(nr, access_raw)
+            remarks = _build_remarks_from_row(nr, access_raw, is_nyc_csv=is_nyc_csv)
             user_remarks = (nr.get("remarks") or "").strip()
             if user_remarks:
                 remarks = f"{user_remarks}\n\n{remarks}" if remarks else user_remarks

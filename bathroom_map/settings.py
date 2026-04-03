@@ -39,8 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'leaflet',
-    'djgeojson',
     'rest_framework',
     'bathroom_map',
     'pwa'
@@ -128,14 +126,6 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR
-
-LEAFLET_CONFIG = {
-    'SPATIAL_EXTENT': (-71.07, 42.382, -71.12, 42.389)
-}
-
-SERIALIZATION_MODULES = {
-    "geojson": "django.contrib.gis.serializers.geojson", 
-}
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [

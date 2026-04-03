@@ -3,7 +3,6 @@ import time
 import urllib.parse
 import urllib.request
 
-from django.core.serializers import serialize
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 # from django.contrib.gis.geoip2 import GeoIP2

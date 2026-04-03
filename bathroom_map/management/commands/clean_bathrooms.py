@@ -1,7 +1,9 @@
 """
 Deduplicate bathrooms, fix title case, and clear bogus hours.
 
-- Deduplicates by location (lat/lon); keeps record with hours/remarks when available
+- Deduplicates by normalized address (incl. St vs Street, etc.); keeps richer record
+- Deduplicates by proximity (lat/lon within a few dozen meters); keeps richer record
+- Deduplicates by identical rounded coordinates (~1 m); keeps richer record
 - Converts ALL CAPS names and addresses to Title Case (preserves state abbrevs like MA, CA)
 - Adds state abbreviation to addresses when missing (from zip code)
 - Clears hours when it's a numeric code (e.g. from PLS data) rather than real hours
@@ -80,6 +82,38 @@ def title_case(s):
     return " ".join(result)
 
 
+def normalize_address_for_dedup(address):
+    """Stable key for grouping duplicate addresses (after title-case passes).
+
+    Maps common street-type spellings to one form (e.g. Street -> st) so
+    "2 Boylston St" and "2 Boylston Street" match.
+    """
+    if not address or not str(address).strip():
+        return ""
+    s = re.sub(r"\s+", " ", str(address).strip().lower())
+    s = s.replace(".", "")
+    s = re.sub(r"\s+", " ", s).strip()
+    # USPS-style: full words -> abbreviations (order: longer words first where relevant)
+    for pattern, repl in (
+        (r"\bboulevard\b", "blvd"),
+        (r"\bavenue\b", "ave"),
+        (r"\bstreet\b", "st"),
+        (r"\bdrive\b", "dr"),
+        (r"\broad\b", "rd"),
+        (r"\blane\b", "ln"),
+        (r"\bcourt\b", "ct"),
+        (r"\bcircle\b", "cir"),
+        (r"\bplace\b", "pl"),
+        (r"\bterrace\b", "ter"),
+        (r"\bparkway\b", "pkwy"),
+        (r"\bhighway\b", "hwy"),
+        (r"\btrail\b", "trl"),
+        (r"\bsquare\b", "sq"),
+    ):
+        s = re.sub(pattern, repl, s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
 def is_bogus_hours(hours):
     """True if hours looks like a numeric code, not real hours text."""
     if not hours or not hours.strip():
@@ -93,6 +127,87 @@ def is_bogus_hours(hours):
     if len(stripped) <= 5 and compact.isdigit():
         return True
     return False
+
+
+def bathroom_richness_score(record):
+    """Higher = prefer keeping this row: real hours, remarks, then total text length."""
+    has_hrs = bool(
+        record.hours
+        and str(record.hours).strip()
+        and not is_bogus_hours(record.hours)
+    )
+    has_rem = bool(record.remarks and str(record.remarks).strip())
+    return (
+        has_hrs,
+        has_rem,
+        len(record.hours or "") + len(record.remarks or ""),
+    )
+
+
+def haversine_m(lat1, lon1, lat2, lon2):
+    """Great-circle distance between two WGS84 points in meters."""
+    r_earth = 6371000.0
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlam = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(
+        dlam / 2
+    ) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(max(0.0, 1.0 - a)))
+    return r_earth * c
+
+
+def cluster_indices_proximity(points, radius_m):
+    """
+    points: list of (lat, lon) for each record.
+    Returns list of lists; each inner list is row indices forming one cluster (transitive
+    within radius_m). Grid bucketing + union-find.
+    """
+    n = len(points)
+    if n == 0:
+        return []
+    # Cell slightly smaller than radius (deg) so true distance is always checked; use a 5x5
+    # neighbor scan so EW separation at mid-latitudes is covered (lon degrees shrink vs lat).
+    cell_deg = max(radius_m / 111000.0, 1e-7)
+    neighbor_range = 2
+    buckets = defaultdict(list)
+    for idx, (lat, lon) in enumerate(points):
+        cx = int(lat / cell_deg)
+        cy = int(lon / cell_deg)
+        buckets[(cx, cy)].append(idx)
+
+    parent = list(range(n))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    for (cx, cy), member_idxs in buckets.items():
+        extended = []
+        for dx in range(-neighbor_range, neighbor_range + 1):
+            for dy in range(-neighbor_range, neighbor_range + 1):
+                extended.extend(buckets.get((cx + dx, cy + dy), []))
+        for a in member_idxs:
+            lat_a, lon_a = points[a]
+            for b in extended:
+                if b <= a:
+                    continue
+                lat_b, lon_b = points[b]
+                if haversine_m(lat_a, lon_a, lat_b, lon_b) <= radius_m:
+                    union(a, b)
+
+    by_root = defaultdict(list)
+    for i in range(n):
+        by_root[find(i)].append(i)
+    return list(by_root.values())
 
 
 class Command(BaseCommand):
@@ -132,6 +247,20 @@ class Command(BaseCommand):
             type=float,
             default=1.05,
             help="Sleep between Overpass requests (be nice to rate limits)",
+        )
+        parser.add_argument(
+            "--proximity-radius-m",
+            type=float,
+            default=55,
+            help=(
+                "Merge bathroom rows within this distance (meters) using lat/lon; "
+                "catches same place with different address text (default: 55)"
+            ),
+        )
+        parser.add_argument(
+            "--skip-proximity-dedup",
+            action="store_true",
+            help="Skip merging duplicates by geographic proximity",
         )
 
     def handle(self, *args, **options):
@@ -383,7 +512,66 @@ class Command(BaseCommand):
                 time.sleep(sleep_seconds)
         self.stdout.write("Hours fetched from OSM: {} records".format(hours_fetched))
 
-        # 6. Deduplicate by (lat, lon) rounded to 5 decimals (~1m)
+        # 6. Deduplicate by normalized address (same full address string)
+        addr_groups = defaultdict(list)
+        for b in Bathroom.objects.all():
+            key = normalize_address_for_dedup(b.address)
+            if not key:
+                continue
+            addr_groups[key].append(b)
+
+        deleted_by_address = 0
+        for key, group in addr_groups.items():
+            if len(group) <= 1:
+                continue
+            group.sort(key=bathroom_richness_score, reverse=True)
+            for dup in group[1:]:
+                if not dry_run:
+                    dup.delete()
+                deleted_by_address += 1
+
+        self.stdout.write(
+            "Duplicates removed (same address): {} records".format(deleted_by_address)
+        )
+
+        # 7. Deduplicate by lat/lon proximity (same building, different address strings)
+        deleted_proximity = 0
+        if not options.get("skip_proximity_dedup"):
+            proximity_m = float(options.get("proximity_radius_m") or 55)
+            points = []
+            proximity_records = []
+            for b in Bathroom.objects.all():
+                if b.latitude is None or b.longitude is None:
+                    continue
+                try:
+                    lat = float(b.latitude)
+                    lon = float(b.longitude)
+                except (TypeError, ValueError):
+                    continue
+                if lat < -90 or lat > 90 or lon < -180 or lon > 180:
+                    continue
+                points.append((lat, lon))
+                proximity_records.append(b)
+
+            for cluster in cluster_indices_proximity(points, proximity_m):
+                if len(cluster) <= 1:
+                    continue
+                group = [proximity_records[i] for i in cluster]
+                group.sort(key=bathroom_richness_score, reverse=True)
+                for dup in group[1:]:
+                    if not dry_run:
+                        dup.delete()
+                    deleted_proximity += 1
+
+            self.stdout.write(
+                "Duplicates removed (within {:.0f} m): {} records".format(
+                    proximity_m, deleted_proximity
+                )
+            )
+        else:
+            self.stdout.write("Proximity dedup skipped")
+
+        # 8. Deduplicate by (lat, lon) rounded to 5 decimals (~1m)
         def coord_key(b):
             lat = float(b.latitude) if b.latitude else 0
             lon = float(b.longitude) if b.longitude else 0
@@ -397,20 +585,13 @@ class Command(BaseCommand):
         for key, group in groups.items():
             if len(group) <= 1:
                 continue
-            # Prefer record with hours or remarks
-            def score(r):
-                has_hrs = bool(r.hours and r.hours.strip() and not is_bogus_hours(r.hours))
-                has_rem = bool(r.remarks and r.remarks.strip())
-                return (has_hrs, has_rem, len(r.hours or "") + len(r.remarks or ""))
-
-            group.sort(key=score, reverse=True)
-            keep = group[0]
+            group.sort(key=bathroom_richness_score, reverse=True)
             for dup in group[1:]:
                 if not dry_run:
                     dup.delete()
                 deleted += 1
 
-        self.stdout.write("Duplicates removed: {} records".format(deleted))
+        self.stdout.write("Duplicates removed (same coordinates): {} records".format(deleted))
 
         total = Bathroom.objects.count()
         self.stdout.write(

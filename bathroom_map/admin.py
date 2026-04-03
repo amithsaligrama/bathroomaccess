@@ -1,6 +1,5 @@
 import csv
 import io
-import json
 import math
 import os
 from collections import defaultdict
@@ -18,6 +17,7 @@ from django.urls import path
 from geopy.geocoders import Nominatim
 import shapefile
 
+from .management.commands import import_bathrooms_csv as bath_csv_import
 from .models import Bathroom
 
 
@@ -33,6 +33,7 @@ class BathroomShapefileImportForm(forms.Form):
 @admin.register(Bathroom)
 class BathroomAdmin(admin.ModelAdmin):
     list_display = ("name", "address", "zip", "hours", "remarks")
+    search_fields = ("name", "address", "zip", "hours", "remarks")
     change_list_template = "admin/bathroom_change_list.html"
 
     def get_urls(self):
@@ -103,6 +104,10 @@ class BathroomAdmin(admin.ModelAdmin):
                             toilets_cnt = 0
                         if toilets_cnt <= 0:
                             continue
+                    if is_nyc_csv:
+                        st = (normalized_row.get("status") or "").strip().lower()
+                        if st != "operational":
+                            continue
                     candidates.append((row_index, normalized_row))
 
                 place_to_zips = self._build_place_zip_index(
@@ -114,17 +119,7 @@ class BathroomAdmin(admin.ModelAdmin):
                 )
 
                 for row_index, normalized_row in candidates:
-                    name = (
-                        normalized_row.get("name")
-                        or normalized_row.get("location")
-                        or normalized_row.get("facility")
-                        or normalized_row.get("facility name")
-                        or normalized_row.get("facility_name")
-                        or normalized_row.get("libname")
-                        or ""
-                    ).strip()
-                    if not name:
-                        name = (normalized_row.get("site_name") or "").strip()
+                    name = bath_csv_import._row_display_name(normalized_row)
                     address = (
                         normalized_row.get("address")
                         or normalized_row.get("street address")
@@ -210,15 +205,19 @@ class BathroomAdmin(admin.ModelAdmin):
                     addr_stripped = (address or "").strip()
                     if not addr_stripped:
                         address = "View on Google Maps"
+                    if is_nyc_csv and name:
+                        address = "{}, New York, NY".format(name)
 
-                    hours = self._build_hours_from_row(normalized_row)
+                    hours = bath_csv_import._build_hours_from_row(
+                        normalized_row, is_nyc_csv=is_nyc_csv
+                    )
                     access_raw = (
                         normalized_row.get("access")
                         or normalized_row.get("accessibility")
                         or ""
                     ).strip()
-                    remarks = self._build_remarks_from_row(
-                        normalized_row, access_raw
+                    remarks = bath_csv_import._build_remarks_from_row(
+                        normalized_row, access_raw, is_nyc_csv=is_nyc_csv
                     )
                     user_remarks = (normalized_row.get("remarks") or "").strip()
                     if user_remarks:
@@ -562,93 +561,6 @@ class BathroomAdmin(admin.ModelAdmin):
         if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
             return "{}:{}".format(parts[0].zfill(2), parts[1].zfill(2))
         return t
-
-    def _hours_from_notes_json(self, notes):
-        if "{" not in notes or "}" not in notes:
-            return ""
-        try:
-            data = json.loads(notes)
-        except (json.JSONDecodeError, TypeError):
-            return ""
-        if isinstance(data, dict):
-            return "; ".join(
-                "{}: {}".format(k, v) for k, v in sorted(data.items())
-            )
-        return ""
-
-    def _build_hours_from_row(self, row):
-        parts = []
-        raw_hours = (row.get("hours") or "").strip()
-        if raw_hours and not self._is_bogus_hours(raw_hours):
-            parts.append(raw_hours)
-        op_hours = (row.get("hours of operation") or row.get("hours_of_operation") or "").strip()
-        if op_hours and op_hours not in parts and not self._is_bogus_hours(op_hours):
-            parts.append(op_hours)
-        open_season = (row.get("open") or "").strip()
-        if open_season and open_season.lower() not in ("future", "closed", "closed for construction"):
-            if open_season not in parts:
-                parts.append(open_season)
-
-        open_h = (row.get("public_access_hours_open") or "").strip()
-        close_h = (row.get("public_access_hours_close") or "").strip()
-        days = (row.get("public_access_days") or "").strip()
-        if open_h and close_h:
-            t_open = self._fmt_time_hm(open_h)
-            t_close = self._fmt_time_hm(close_h)
-            line = (
-                "{} {}–{}".format(days, t_open, t_close)
-                if days
-                else "{}–{}".format(t_open, t_close)
-            )
-            if line not in parts:
-                parts.append(line)
-
-        notes = (row.get("notes") or "").strip()
-        if notes:
-            jh = self._hours_from_notes_json(notes)
-            if jh and jh not in parts:
-                parts.append(jh)
-
-        return "; ".join(parts)
-
-    def _build_remarks_from_row(self, row, access_raw):
-        chunks = []
-        for label, key in (
-            ("Park", "park"),
-            ("Source", "source"),
-            ("Neighborhood", "analysis_neighborhood"),
-            ("Supervisor district", "supervisor_district"),
-            ("Location type", "location type"),
-            ("Operator", "operator"),
-            ("Status", "status"),
-            ("Restroom type", "restroom type"),
-            ("Changing stations", "changing stations"),
-            ("Website", "website"),
-            # Generic restroom datasets (example: LA "Restroom_*.csv")
-            ("Level", "level"),
-            ("Gender", "gender"),
-            ("Toilets", "toilets"),
-            ("Urinals", "urinals"),
-            ("Faucets", "faucets"),
-            ("Dryer tower", "dryertower"),
-            ("Soap dispenser", "soap_disp"),
-            ("Year built", "year_built"),
-            ("Maintenance date", "maint_date"),
-            ("Janitor", "janitor"),
-            ("Heated", "heated"),
-        ):
-            v = (row.get(key) or "").strip()
-            if v:
-                chunks.append("{}: {}".format(label, v))
-        extra_notes = (row.get("additional notes") or row.get("additional_notes") or "").strip()
-        if extra_notes:
-            chunks.append("Additional notes: {}".format(extra_notes))
-        notes = (row.get("notes") or "").strip()
-        if notes:
-            chunks.append("Notes: {}".format(notes))
-        if access_raw:
-            chunks.append("Access: {}".format(access_raw))
-        return "\n".join(chunks)
 
     def _parse_lat_long(self, row, row_index, errors):
         latitude = None
