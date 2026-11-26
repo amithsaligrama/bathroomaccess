@@ -1,18 +1,62 @@
-function render(m) {
-    var ret = "<h3>" + m.name + "</h3><br><b>Address</b>: <a target=\"_blank\" href=\"https://www.google.com/maps/search/?api=1&query=" + m.latitude + "%2C" + m.longitude + "\">" + m.address + "</a><br><b>Hours</b>: " + m.hours + "<br><b>Remarks</b>: " + m.remarks.replace(/(?:\r\n|\r|\n)/g, '<br>');;
-    console.log(ret);
-    return ret;
-}
+// Shared basemap setup. Bathroom markers and search remain in map.html.
+// Load Leaflet, MapLibre GL JS and the Leaflet adapter before this file.
+(function () {
+    'use strict';
 
-const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-const map = L.map('map')
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: attribution }).addTo(map);
-const markers = JSON.parse(document.getElementById('markers-data').textContent);
-let markerGroup = L.featureGroup([]).addTo(map);
+    window.addOpenFreeMapBasemap = function (map) {
+        var status = document.getElementById('map-status');
+        var basemap;
 
-for (var key in markers) {
-    var latlng = L.latLng(markers[key].fields.latitude, markers[key].fields.longitude);
-    L.marker(latlng).bindPopup(render(markers[key].fields)).addTo(markerGroup);
-}
+        function showStatus(message) {
+            if (status) {
+                status.textContent = message;
+                status.hidden = false;
+            }
+        }
 
-map.fitBounds(markerGroup.getBounds(), { maxZoom: 15, padding: [100, 100] });
+        if (typeof window.maplibregl === 'undefined' || typeof L.maplibreGL !== 'function') {
+            showStatus('The background map could not load. You can still use the bathroom list below.');
+            return null;
+        }
+
+        try {
+            basemap = L.maplibreGL({
+                style: 'https://tiles.openfreemap.org/styles/liberty',
+                attributionControl: {
+                    customAttribution:
+                        '<a href="https://openfreemap.org/">OpenFreeMap</a> ' +
+                        '&copy; <a href="https://www.openmaptiles.org/">OpenMapTiles</a> ' +
+                        'Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                }
+            });
+
+            // Adapter 0.1.4 assumes construction succeeded when removing a layer.
+            // Let Leaflet also clean up events if WebGL construction throws.
+            var removeBasemap = basemap.onRemove;
+            basemap.onRemove = function (leafletMap) {
+                if (this.getMaplibreMap()) {
+                    removeBasemap.call(this, leafletMap);
+                } else {
+                    var container = this.getContainer();
+                    if (container && container.parentNode) {
+                        container.parentNode.removeChild(container);
+                    }
+                }
+            };
+
+            basemap.addTo(map);
+            basemap.getMaplibreMap().on('error', function (event) {
+                console.warn('OpenFreeMap resource failed:', event.error || event);
+                showStatus('Some background map details could not load. Refresh to try again, or use the bathroom list below.');
+            });
+            return basemap;
+        } catch (error) {
+            if (basemap && map.hasLayer(basemap)) {
+                map.removeLayer(basemap);
+            }
+            console.warn('OpenFreeMap could not start:', error);
+            showStatus('The background map is unavailable in this browser. Try another browser, or use the bathroom list below.');
+            return null;
+        }
+    };
+}());

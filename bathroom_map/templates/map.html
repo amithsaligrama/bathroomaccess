@@ -7,7 +7,8 @@
   <title>Bathroom Access: Find public restrooms near you in Greater Boston</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.1/dist/maplibre-gl.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
@@ -41,7 +42,6 @@
       opacity: 0.7;
     }
   </style>
-  </style>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FBRC7LKLBW"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -54,9 +54,13 @@
 <body>
   {{ markers|json_script:"markers-data" }}
   <div id="map"></div>
+  <div id="map-status" class="alert alert-warning m-3" role="status" aria-live="polite" hidden></div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@5.24.1/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
+  <script src="{% static 'map.js' %}?v=openfreemap-1"></script>
   <script src="https://kit.fontawesome.com/66634f6c24.js" crossorigin="anonymous"></script>
   <script>
   (function() {
@@ -68,11 +72,22 @@
       }
       var mapEl = document.getElementById('map');
       if (!mapEl) return;
-      var map = L.map('map', {tap: false});
+      // The vector layer does not supply a zoom limit; markercluster needs one.
+      var map = L.map('map', {
+        tap: false,
+        minZoom: 1,
+        maxZoom: 19,
+        maxBounds: [[-85.05112878, -Infinity], [85.05112878, Infinity]],
+        maxBoundsViscosity: 1
+      });
       map.setView([42.36, -71.06], 10);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(map);
+      if (typeof window.addOpenFreeMapBasemap === 'function') {
+        window.addOpenFreeMapBasemap(map);
+      } else {
+        var mapStatus = document.getElementById('map-status');
+        mapStatus.textContent = 'The background map could not load. You can still use the bathroom list below.';
+        mapStatus.hidden = false;
+      }
       var markersData = [];
       var markersEl = document.getElementById('markers-data');
       if (markersEl) { try { markersData = JSON.parse(markersEl.textContent); } catch(e) { markersData = []; } }
